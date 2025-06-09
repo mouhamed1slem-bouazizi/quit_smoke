@@ -29,6 +29,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
 import { useTheme } from "@/contexts/theme-context"
 import { Textarea } from "@/components/ui/textarea"
+import NotificationBell from "@/components/notification-bell"
 
 interface ProfilePageProps {
   daysSinceQuit: number
@@ -217,6 +218,7 @@ export default function ProfilePage({ daysSinceQuit }: ProfilePageProps) {
               My Profile
             </CardTitle>
             <div className="flex gap-2">
+              <NotificationBell />
               <Button
                 variant="outline"
                 size="sm"

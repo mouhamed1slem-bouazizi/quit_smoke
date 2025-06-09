@@ -3,11 +3,12 @@ import type { Metadata } from "next"
 import "./globals.css"
 import { AuthProvider } from "@/contexts/auth-context"
 import { ThemeProvider } from "@/contexts/theme-context"
+import { NotificationProvider } from "@/contexts/notification-context"
 
 export const metadata: Metadata = {
   title: "Quit Smoking App",
   description: "Your journey to a smoke-free life",
-    generator: 'v0.dev'
+  generator: "v0.dev",
 }
 
 export default function RootLayout({
@@ -19,7 +20,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body>
         <AuthProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <NotificationProvider>{children}</NotificationProvider>
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>
