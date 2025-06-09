@@ -26,6 +26,8 @@ export default function NumberSequenceGame({ onComplete }: NumberSequenceGamePro
   const [sequenceType, setSequenceType] = useState("")
   const [streak, setStreak] = useState(0)
   const [difficulty, setDifficulty] = useState("Beginner")
+  const [showWrongAnswer, setShowWrongAnswer] = useState(false)
+  const [wrongAnswerInfo, setWrongAnswerInfo] = useState<{ answer: number; type: string } | null>(null)
 
   useEffect(() => {
     initializeGame()
@@ -96,6 +98,9 @@ export default function NumberSequenceGame({ onComplete }: NumberSequenceGamePro
   }
 
   const generateSequence = (currentLevel: number) => {
+    setShowWrongAnswer(false)
+    setWrongAnswerInfo(null)
+
     const settings = getDifficultySettings(currentLevel)
     setTimeLimit(settings.timeLimit)
     setTimeLeft(settings.timeLimit)
@@ -451,10 +456,19 @@ export default function NumberSequenceGame({ onComplete }: NumberSequenceGamePro
       setLives(newLives)
       setStreak(0)
 
+      // Show wrong answer message
+      setShowWrongAnswer(true)
+      setWrongAnswerInfo({
+        answer: correctAnswer,
+        type: sequenceType,
+      })
+
       if (newLives <= 0) {
         setGameState("failed")
       } else {
         setTimeout(() => {
+          setShowWrongAnswer(false)
+          setWrongAnswerInfo(null)
           generateSequence(level)
         }, 2500)
       }
@@ -481,6 +495,8 @@ export default function NumberSequenceGame({ onComplete }: NumberSequenceGamePro
     setUserInput("")
     setGameState("waiting")
     setTimeLeft(null)
+    setShowWrongAnswer(false)
+    setWrongAnswerInfo(null)
   }
 
   const isGameOver = lives <= 0 || (level > 100 && gameState === "success")
@@ -655,11 +671,13 @@ export default function NumberSequenceGame({ onComplete }: NumberSequenceGamePro
             </div>
 
             {/* Wrong Answer Display */}
-            {lives < 3 && gameState === "playing" && (
+            {showWrongAnswer && wrongAnswerInfo && (
               <div className="text-center p-3 bg-red-50 rounded-lg border border-red-200">
                 <p className="text-red-700 font-semibold">❌ Incorrect!</p>
-                <p className="text-sm text-red-600">The correct answer was: {correctAnswer.toLocaleString()}</p>
-                <p className="text-xs text-red-500">Pattern: {sequenceType}</p>
+                <p className="text-sm text-red-600">
+                  The correct answer was: {wrongAnswerInfo.answer.toLocaleString()}
+                </p>
+                <p className="text-xs text-red-500">Pattern: {wrongAnswerInfo.type}</p>
               </div>
             )}
           </div>

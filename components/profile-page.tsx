@@ -1,65 +1,47 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User, Calendar, Edit3, Camera, Trophy, Heart, Cigarette, Save, X } from "lucide-react"
-
-interface UserData {
-  // Personal Information
-  name: string
-  age: number
-  gender: string
-  profilePicture: string
-  location: string
-  occupation: string
-
-  // Smoking Information
-  quitDate: string
-  smokesPerDay: number
-  costPerPack: number
-  cigarettesPerPack: number
-  yearsSmoked: number
-  reasonToQuit: string
-
-  // App Data
-  goals: Array<{
-    id: string
-    title: string
-    target: number
-    completed: boolean
-  }>
-  achievements: Array<{
-    id: string
-    title: string
-    description: string
-    unlocked: boolean
-    date?: string
-  }>
-}
+import { User, Calendar, Edit3, Camera, Trophy, Heart, Cigarette, Save, X, LogOut } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
+import { useRouter } from "next/navigation"
 
 interface ProfilePageProps {
-  userData: UserData
-  updateUserData: (data: Partial<UserData>) => void
   daysSinceQuit: number
 }
 
-export default function ProfilePage({ userData, updateUserData, daysSinceQuit }: ProfilePageProps) {
+export default function ProfilePage({ daysSinceQuit }: ProfilePageProps) {
+  const { userData, updateUserData, logout, currentUser } = useAuth()
+  const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [editData, setEditData] = useState({
-    name: userData.name || "",
-    age: userData.age || 25,
-    gender: userData.gender || "",
-    location: userData.location || "",
-    occupation: userData.occupation || "",
-    yearsSmoked: userData.yearsSmoked || 1,
-    reasonToQuit: userData.reasonToQuit || "",
+    name: userData?.name || "",
+    age: userData?.age || 25,
+    gender: userData?.gender || "",
+    location: userData?.location || "",
+    occupation: userData?.occupation || "",
+    yearsSmoked: userData?.yearsSmoked || 1,
+    reasonToQuit: userData?.reasonToQuit || "",
+    quitDate: userData?.quitDate
+      ? new Date(userData.quitDate).toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0],
   })
 
+  if (!userData) {
+    return <div>Loading user data...</div>
+  }
+
   const handleSave = () => {
-    updateUserData(editData)
+    const updatedData = {
+      ...editData,
+      quitDate: new Date(editData.quitDate + "T00:00:00").toISOString(),
+    }
+    updateUserData(updatedData)
     setIsEditing(false)
   }
 
@@ -72,8 +54,32 @@ export default function ProfilePage({ userData, updateUserData, daysSinceQuit }:
       occupation: userData.occupation || "",
       yearsSmoked: userData.yearsSmoked || 1,
       reasonToQuit: userData.reasonToQuit || "",
+      quitDate: userData.quitDate
+        ? new Date(userData.quitDate).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
     })
     setIsEditing(false)
+  }
+
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const result = e.target?.result as string
+        updateUserData({ profilePicture: result })
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      router.push("/auth/login")
+    } catch (error) {
+      console.error("Failed to log out", error)
+    }
   }
 
   const calculateMoneySaved = () => {
@@ -112,15 +118,26 @@ export default function ProfilePage({ userData, updateUserData, daysSinceQuit }:
               <User className="w-5 h-5 text-blue-600" />
               My Profile
             </CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditing(!isEditing)}
-              className="flex items-center gap-2"
-            >
-              {isEditing ? <X className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
-              {isEditing ? "Cancel" : "Edit"}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditing(!isEditing)}
+                className="flex items-center gap-2"
+              >
+                {isEditing ? <X className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
+                {isEditing ? "Cancel" : "Edit"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                className="flex items-center gap-2 text-red-500 border-red-200 hover:bg-red-50"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -129,13 +146,25 @@ export default function ProfilePage({ userData, updateUserData, daysSinceQuit }:
               <Avatar className="w-20 h-20">
                 <AvatarImage src={userData.profilePicture || "/placeholder.svg"} alt={userData.name || "User"} />
                 <AvatarFallback className="text-2xl bg-blue-100 text-blue-600">
-                  {(userData.name || "U").charAt(0).toUpperCase()}
+                  {(userData.name || currentUser?.email?.[0] || "U").charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               {isEditing && (
-                <Button size="sm" variant="outline" className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full p-0">
-                  <Camera className="w-4 h-4" />
-                </Button>
+                <div className="absolute -bottom-2 -right-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                    id="photo-upload"
+                  />
+                  <label
+                    htmlFor="photo-upload"
+                    className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-full bg-white border-2 border-blue-500 hover:bg-blue-50 transition-colors"
+                  >
+                    <Camera className="w-4 h-4 text-blue-500" />
+                  </label>
+                </div>
               )}
             </div>
             <div className="flex-1">
@@ -173,14 +202,17 @@ export default function ProfilePage({ userData, updateUserData, daysSinceQuit }:
                 </div>
               ) : (
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">{userData.name || "Anonymous User"}</h2>
+                  <h2 className="text-xl font-bold text-gray-800">
+                    {userData.name || currentUser?.email?.split("@")[0] || "Anonymous User"}
+                  </h2>
                   <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                    {userData.age && <span>{userData.age} years old</span>}
+                    {userData.age > 0 && <span>{userData.age} years old</span>}
                     {userData.gender && (
                       <Badge variant="secondary" className="capitalize">
                         {userData.gender}
                       </Badge>
                     )}
+                    <span className="text-gray-500">{currentUser?.email}</span>
                   </div>
                 </div>
               )}
@@ -231,6 +263,17 @@ export default function ProfilePage({ userData, updateUserData, daysSinceQuit }:
                     onChange={(e) => setEditData({ ...editData, reasonToQuit: e.target.value })}
                     className="w-full p-2 border rounded-lg h-20 resize-none"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-orange-600">⚠️ Reset Quit Date</label>
+                  <input
+                    type="date"
+                    value={editData.quitDate}
+                    onChange={(e) => setEditData({ ...editData, quitDate: e.target.value })}
+                    className="w-full p-2 border-2 border-orange-200 rounded-lg focus:border-orange-400"
+                    max={new Date().toISOString().split("T")[0]}
+                  />
+                  <p className="text-xs text-orange-600 mt-1">⚠️ Changing this will reset your progress statistics</p>
                 </div>
                 <div className="flex gap-2 pt-2">
                   <Button onClick={handleSave} className="flex-1 bg-green-600 hover:bg-green-700">

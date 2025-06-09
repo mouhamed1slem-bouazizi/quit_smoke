@@ -24,6 +24,7 @@ import {
   CheckCircle,
   X,
 } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
 
 interface Goal {
   id: string
@@ -47,15 +48,10 @@ interface Achievement {
 
 interface GoalsPageProps {
   daysSinceQuit: number
-  userData: {
-    smokesPerDay: number
-    goals: Goal[]
-    achievements: Achievement[]
-  }
-  updateUserData: (data: any) => void
 }
 
-export default function GoalsPage({ daysSinceQuit, userData, updateUserData }: GoalsPageProps) {
+export default function GoalsPage({ daysSinceQuit }: GoalsPageProps) {
+  const { userData, updateUserData, loading } = useAuth()
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [showAddGoal, setShowAddGoal] = useState(false)
   const [newGoal, setNewGoal] = useState({
@@ -64,6 +60,25 @@ export default function GoalsPage({ daysSinceQuit, userData, updateUserData }: G
     target: "",
     category: "health",
   })
+
+  // Show loading state if user data is not loaded yet
+  if (loading || !userData) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="space-y-3">
+            <div className="h-20 bg-gray-200 rounded"></div>
+            <div className="grid grid-cols-3 gap-3">
+              {[...Array(9)].map((_, i) => (
+                <div key={i} className="h-24 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const goalCategories = [
     {
@@ -979,24 +994,28 @@ export default function GoalsPage({ daysSinceQuit, userData, updateUserData }: G
   // Merge default goals with user goals
   const allGoals = [...defaultGoals, ...(userData.goals || [])]
 
-  const addCustomGoal = () => {
+  const addCustomGoal = async () => {
     if (!newGoal.title.trim() || !newGoal.target) return
 
-    const customGoal: Goal = {
-      id: `custom_${Date.now()}`,
-      title: newGoal.title.trim(),
-      description: newGoal.description.trim(),
-      target: Number.parseInt(newGoal.target),
-      current: 0,
-      category: newGoal.category,
-      completed: false,
+    try {
+      const customGoal: Goal = {
+        id: `custom_${Date.now()}`,
+        title: newGoal.title.trim(),
+        description: newGoal.description.trim(),
+        target: Number.parseInt(newGoal.target),
+        current: 0,
+        category: newGoal.category,
+        completed: false,
+      }
+
+      const updatedGoals = [...(userData.goals || []), customGoal]
+      await updateUserData({ goals: updatedGoals })
+
+      setNewGoal({ title: "", description: "", target: "", category: "health" })
+      setShowAddGoal(false)
+    } catch (error) {
+      console.error("Error adding custom goal:", error)
     }
-
-    const updatedGoals = [...(userData.goals || []), customGoal]
-    updateUserData({ goals: updatedGoals })
-
-    setNewGoal({ title: "", description: "", target: "", category: "health" })
-    setShowAddGoal(false)
   }
 
   const getNextGoal = () => {

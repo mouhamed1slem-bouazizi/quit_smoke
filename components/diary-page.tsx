@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { BookOpen, Plus, Edit3, Trash2, Calendar, Heart, X, Save, Smile, Clock } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
 
 interface DiaryEntry {
   id: string
@@ -15,14 +16,15 @@ interface DiaryEntry {
   note: string
   timestamp: number
   time?: string
+  userId: string
 }
 
 interface DiaryPageProps {
   daysSinceQuit: number
-  updateUserData: (data: any) => void
 }
 
-export default function DiaryPage({ daysSinceQuit, updateUserData }: DiaryPageProps) {
+export default function DiaryPage({ daysSinceQuit }: DiaryPageProps) {
+  const { currentUser, userData, updateUserData } = useAuth()
   const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([])
   const [showAddEntry, setShowAddEntry] = useState(false)
   const [editingEntry, setEditingEntry] = useState<string | null>(null)
@@ -32,6 +34,7 @@ export default function DiaryPage({ daysSinceQuit, updateUserData }: DiaryPagePr
     note: "",
   })
   const [editNote, setEditNote] = useState("")
+  const [loading, setLoading] = useState(true)
 
   const moodOptions = [
     { emoji: "😊", label: "Great", color: "bg-green-100 text-green-700" },
@@ -48,20 +51,48 @@ export default function DiaryPage({ daysSinceQuit, updateUserData }: DiaryPagePr
 
   useEffect(() => {
     loadDiaryEntries()
-  }, [])
+  }, [userData])
 
   const loadDiaryEntries = () => {
-    const savedEntries = localStorage.getItem("diaryEntries")
-    if (savedEntries) {
-      setDiaryEntries(JSON.parse(savedEntries))
+    try {
+      // Load from user data in Firebase (stored as part of user document)
+      if (userData && userData.diaryEntries) {
+        setDiaryEntries(userData.diaryEntries as DiaryEntry[])
+      } else {
+        // Fallback to localStorage for existing data
+        const savedEntries = localStorage.getItem(`diaryEntries_${currentUser?.uid}`)
+        if (savedEntries) {
+          const entries = JSON.parse(savedEntries)
+          setDiaryEntries(entries)
+          // Migrate to Firebase user document
+          if (currentUser && updateUserData) {
+            updateUserData({ diaryEntries: entries })
+          }
+        }
+      }
+      setLoading(false)
+    } catch (error) {
+      console.error("Error loading diary entries:", error)
+      setLoading(false)
     }
   }
 
-  const saveDiaryEntries = (entries: DiaryEntry[]) => {
-    setDiaryEntries(entries)
-    localStorage.setItem("diaryEntries", JSON.stringify(entries))
-    // Force a re-render by updating a timestamp
-    updateUserData({ lastDiaryUpdate: Date.now() })
+  const saveDiaryEntries = async (entries: DiaryEntry[]) => {
+    try {
+      setDiaryEntries(entries)
+
+      // Save to localStorage as backup
+      if (currentUser) {
+        localStorage.setItem(`diaryEntries_${currentUser.uid}`, JSON.stringify(entries))
+      }
+
+      // Save to Firebase user document
+      if (updateUserData) {
+        await updateUserData({ diaryEntries: entries })
+      }
+    } catch (error) {
+      console.error("Error saving diary entries:", error)
+    }
   }
 
   const getTodayDate = () => {
@@ -132,81 +163,118 @@ export default function DiaryPage({ daysSinceQuit, updateUserData }: DiaryPagePr
     return last7Days
   }
 
-  const addDiaryEntry = () => {
-    if (!newEntry.note.trim()) return
+  const addDiaryEntry = async () => {
+    if (!newEntry.note.trim() || !currentUser) return
 
-    const today = getTodayDate()
-    const currentTime = getCurrentTime()
+    try {
+      const today = getTodayDate()
+      const currentTime = getCurrentTime()
 
-    // Create new entry
-    const entry: DiaryEntry = {
-      id: `diary_${Date.now()}`,
-      date: today,
-      mood: newEntry.mood || "😐", // Default mood if none selected
-      moodLabel: newEntry.moodLabel || "Okay", // Default mood label
-      note: newEntry.note.trim(),
-      timestamp: Date.now(),
-      time: currentTime,
+      const entry: DiaryEntry = {
+        id: `diary_${Date.now()}`,
+        userId: currentUser.uid,
+        date: today,
+        mood: newEntry.mood || "😐",
+        moodLabel: newEntry.moodLabel || "Okay",
+        note: newEntry.note.trim(),
+        timestamp: Date.now(),
+        time: currentTime,
+      }
+
+      const updatedEntries = [entry, ...diaryEntries]
+      await saveDiaryEntries(updatedEntries)
+
+      // Reset form and close
+      setNewEntry({ mood: "", moodLabel: "", note: "" })
+      setShowAddEntry(false)
+    } catch (error) {
+      console.error("Error adding diary entry:", error)
     }
-
-    saveDiaryEntries([...diaryEntries, entry])
-
-    // Reset form and close
-    setNewEntry({ mood: "", moodLabel: "", note: "" })
-    setShowAddEntry(false)
   }
 
-  const updateMood = (mood: string, moodLabel: string) => {
-    const today = getTodayDate()
-    const latestMood = getLatestMood()
-    const currentTime = getCurrentTime()
+  const updateMood = async (mood: string, moodLabel: string) => {
+    if (!currentUser) return
 
-    if (latestMood) {
-      // Update latest entry's mood
+    try {
+      const today = getTodayDate()
+      const latestMood = getLatestMood()
+      const currentTime = getCurrentTime()
+
+      if (latestMood) {
+        // Update latest entry's mood
+        const updatedEntries = diaryEntries.map((entry) =>
+          entry.id === latestMood.id
+            ? {
+                ...entry,
+                mood,
+                moodLabel,
+                timestamp: Date.now(),
+              }
+            : entry,
+        )
+        await saveDiaryEntries(updatedEntries)
+      } else {
+        // Create new entry with just mood
+        const entry: DiaryEntry = {
+          id: `diary_${Date.now()}`,
+          userId: currentUser.uid,
+          date: today,
+          mood,
+          moodLabel,
+          note: "",
+          timestamp: Date.now(),
+          time: currentTime,
+        }
+        const updatedEntries = [entry, ...diaryEntries]
+        await saveDiaryEntries(updatedEntries)
+      }
+    } catch (error) {
+      console.error("Error updating mood:", error)
+    }
+  }
+
+  const updateNote = async (entryId: string, newNote: string) => {
+    if (!currentUser) return
+
+    try {
       const updatedEntries = diaryEntries.map((entry) =>
-        entry.id === latestMood.id
+        entry.id === entryId
           ? {
               ...entry,
-              mood,
-              moodLabel,
+              note: newNote.trim(),
               timestamp: Date.now(),
             }
           : entry,
       )
-      saveDiaryEntries(updatedEntries)
-    } else {
-      // Create new entry with just mood
-      const entry: DiaryEntry = {
-        id: `diary_${Date.now()}`,
-        date: today,
-        mood,
-        moodLabel,
-        note: "",
-        timestamp: Date.now(),
-        time: currentTime,
-      }
-      saveDiaryEntries([...diaryEntries, entry])
+      await saveDiaryEntries(updatedEntries)
+
+      setEditingEntry(null)
+      setEditNote("")
+    } catch (error) {
+      console.error("Error updating note:", error)
     }
   }
 
-  const updateNote = (entryId: string, newNote: string) => {
-    const updatedEntries = diaryEntries.map((entry) =>
-      entry.id === entryId
-        ? {
-            ...entry,
-            note: newNote.trim(),
-            timestamp: Date.now(),
-          }
-        : entry,
-    )
-    saveDiaryEntries(updatedEntries)
-    setEditingEntry(null)
-    setEditNote("")
+  const deleteEntry = async (entryId: string) => {
+    if (!currentUser) return
+
+    try {
+      const updatedEntries = diaryEntries.filter((entry) => entry.id !== entryId)
+      await saveDiaryEntries(updatedEntries)
+    } catch (error) {
+      console.error("Error deleting entry:", error)
+    }
   }
 
-  const deleteEntry = (entryId: string) => {
-    const updatedEntries = diaryEntries.filter((entry) => entry.id !== entryId)
-    saveDiaryEntries(updatedEntries)
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your diary...</p>
+        </div>
+      </div>
+    )
   }
 
   const last7DaysMoods = getLast7DaysMoods()
@@ -345,7 +413,6 @@ export default function DiaryPage({ daysSinceQuit, updateUserData }: DiaryPagePr
             <div className="space-y-4">
               {todayEntries
                 .filter((entry) => entry.note.trim() !== "")
-                .sort((a, b) => b.timestamp - a.timestamp)
                 .map((entry) => (
                   <div key={entry.id} className="p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-start gap-3">

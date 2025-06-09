@@ -25,6 +25,10 @@ export default function WordPuzzleGame({ onComplete }: WordPuzzleGameProps) {
   const [wordCategory, setWordCategory] = useState("")
   const [streak, setStreak] = useState(0)
 
+  // Dedicated state for wrong answer message
+  const [showWrongAnswer, setShowWrongAnswer] = useState(false)
+  const [wrongAnswerText, setWrongAnswerText] = useState("")
+
   const wordLists = {
     beginner: {
       health: ["HEART", "LUNGS", "CLEAN", "FRESH", "HAPPY", "STRONG", "VITAL", "PEACE", "CALM", "HOPE"],
@@ -250,10 +254,17 @@ export default function WordPuzzleGame({ onComplete }: WordPuzzleGameProps) {
     setHintsUsed(0)
     setUserInput("")
     setGameState("waiting")
+    // Clear wrong answer state
+    setShowWrongAnswer(false)
+    setWrongAnswerText("")
     generateWord(1)
   }
 
   const generateWord = (currentLevel: number) => {
+    // Clear wrong answer state when generating new word
+    setShowWrongAnswer(false)
+    setWrongAnswerText("")
+
     const settings = getDifficultySettings(currentLevel)
     setTimeLimit(settings.timeLimit)
     setTimeLeft(settings.timeLimit)
@@ -287,6 +298,10 @@ export default function WordPuzzleGame({ onComplete }: WordPuzzleGameProps) {
 
   const checkAnswer = () => {
     if (userInput.toUpperCase() === currentWord) {
+      // Correct answer - clear any wrong answer state
+      setShowWrongAnswer(false)
+      setWrongAnswerText("")
+
       const basePoints = currentWord.length * 10
       const timeBonus = timeLeft ? timeLeft * 2 : 0
       const hintPenalty = hintsUsed * 10
@@ -307,16 +322,26 @@ export default function WordPuzzleGame({ onComplete }: WordPuzzleGameProps) {
         }, 1500)
       }
     } else {
+      // Wrong answer - show error message
+      setShowWrongAnswer(true)
+      setWrongAnswerText(currentWord)
+
       const newLives = lives - 1
       setLives(newLives)
       setStreak(0)
+
+      // Clear the wrong answer message after 2.5 seconds
+      setTimeout(() => {
+        setShowWrongAnswer(false)
+        setWrongAnswerText("")
+      }, 2500)
 
       if (newLives <= 0) {
         setGameState("failed")
       } else {
         setTimeout(() => {
           generateWord(level)
-        }, 2000)
+        }, 3000) // Wait a bit longer to show the error message
       }
     }
   }
@@ -348,6 +373,9 @@ export default function WordPuzzleGame({ onComplete }: WordPuzzleGameProps) {
     setUserInput("")
     setGameState("waiting")
     setTimeLeft(null)
+    // Clear wrong answer state
+    setShowWrongAnswer(false)
+    setWrongAnswerText("")
   }
 
   const isGameOver = lives <= 0 || (level > 100 && gameState === "success")
@@ -461,6 +489,14 @@ export default function WordPuzzleGame({ onComplete }: WordPuzzleGameProps) {
               </div>
             )}
 
+            {/* Wrong Answer Display - Only show when showWrongAnswer is true */}
+            {showWrongAnswer && (
+              <div className="text-center p-3 bg-red-50 rounded-lg border border-red-200">
+                <p className="text-red-700 font-semibold">❌ Incorrect!</p>
+                <p className="text-sm text-red-600">The correct answer was: {wrongAnswerText}</p>
+              </div>
+            )}
+
             {/* Input Field */}
             <div className="space-y-3">
               <input
@@ -492,14 +528,6 @@ export default function WordPuzzleGame({ onComplete }: WordPuzzleGameProps) {
                 </Button>
               </div>
             </div>
-
-            {/* Wrong Answer Display */}
-            {lives < 3 && gameState === "playing" && (
-              <div className="text-center p-3 bg-red-50 rounded-lg border border-red-200">
-                <p className="text-red-700 font-semibold">❌ Incorrect!</p>
-                <p className="text-sm text-red-600">The correct answer was: {currentWord}</p>
-              </div>
-            )}
           </div>
         )}
 

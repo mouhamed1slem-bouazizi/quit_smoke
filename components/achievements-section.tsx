@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Trophy, Star, Award, Medal } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
 
 interface Achievement {
   id: string
@@ -19,16 +20,21 @@ interface UserData {
 
 interface AchievementsSectionProps {
   userData: UserData
-  updateUserData: (data: Partial<UserData>) => void
   daysSinceQuit: number
 }
 
-export default function AchievementsSection({ userData, updateUserData, daysSinceQuit }: AchievementsSectionProps) {
-  useEffect(() => {
-    checkAndUnlockAchievements()
-  }, [daysSinceQuit])
+export default function AchievementsSection({ userData, daysSinceQuit }: AchievementsSectionProps) {
+  const { currentUser, updateUserData } = useAuth()
 
-  const checkAndUnlockAchievements = () => {
+  useEffect(() => {
+    if (currentUser && userData) {
+      checkAndUnlockAchievements()
+    }
+  }, [daysSinceQuit, currentUser])
+
+  const checkAndUnlockAchievements = async () => {
+    if (!currentUser || !userData.achievements) return
+
     const gamesPlayed = Number.parseInt(localStorage.getItem("gamesPlayed") || "0")
 
     const updatedAchievements = userData.achievements.map((achievement) => {
@@ -68,19 +74,24 @@ export default function AchievementsSection({ userData, updateUserData, daysSinc
     )
 
     if (newlyUnlocked.length > 0) {
-      updateUserData({ achievements: updatedAchievements })
+      try {
+        // Update achievements in Firebase
+        await updateUserData({ achievements: updatedAchievements })
 
-      // Show celebration for newly unlocked achievements
-      newlyUnlocked.forEach((achievement) => {
-        setTimeout(() => {
-          alert(`🎉 Achievement Unlocked: ${achievement.title}!\n${achievement.description}`)
-        }, 500)
-      })
+        // Show celebration for newly unlocked achievements
+        newlyUnlocked.forEach((achievement) => {
+          setTimeout(() => {
+            alert(`🎉 Achievement Unlocked: ${achievement.title}!\n${achievement.description}`)
+          }, 500)
+        })
+      } catch (error) {
+        console.error("Error updating achievements:", error)
+      }
     }
   }
 
-  const unlockedCount = userData.achievements.filter((a) => a.unlocked).length
-  const totalCount = userData.achievements.length
+  const unlockedCount = userData.achievements?.filter((a) => a.unlocked).length || 0
+  const totalCount = userData.achievements?.length || 0
 
   const getAchievementIcon = (achievementId: string) => {
     switch (achievementId) {
@@ -98,7 +109,7 @@ export default function AchievementsSection({ userData, updateUserData, daysSinc
   }
 
   const getProgressToNextAchievement = () => {
-    const nextAchievement = userData.achievements.find((a) => !a.unlocked)
+    const nextAchievement = userData.achievements?.find((a) => !a.unlocked)
     if (!nextAchievement) return null
 
     switch (nextAchievement.id) {
@@ -117,6 +128,22 @@ export default function AchievementsSection({ userData, updateUserData, daysSinc
   }
 
   const nextProgress = getProgressToNextAchievement()
+
+  if (!userData.achievements) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-yellow-600" />
+            Achievements
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-500">Loading achievements...</p>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card>
@@ -179,7 +206,7 @@ export default function AchievementsSection({ userData, updateUserData, daysSinc
           </div>
         )}
 
-        {unlockedCount === totalCount && (
+        {unlockedCount === totalCount && totalCount > 0 && (
           <div className="mt-4 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg text-center">
             <div className="text-3xl mb-2">🎉</div>
             <h3 className="font-bold text-yellow-700 mb-1">Achievement Master!</h3>

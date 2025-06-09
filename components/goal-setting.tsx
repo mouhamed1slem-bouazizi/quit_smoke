@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Target, Plus, CheckCircle, Clock, Heart, MessageCircle, Trophy, Star, Award, Medal } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
 
 interface Goal {
   id: string
@@ -19,13 +20,7 @@ interface Goal {
   completedDate?: string
 }
 
-interface UserData {
-  goals: Goal[]
-}
-
 interface GoalSettingProps {
-  userData: UserData
-  updateUserData: (data: Partial<UserData>) => void
   daysSinceQuit: number
 }
 
@@ -172,7 +167,8 @@ const PREDEFINED_GOALS = [
   { id: "g100", title: "Ultimate Master", target: 5475, description: "The ultimate 15-year achievement!" },
 ]
 
-export default function GoalSetting({ userData, updateUserData, daysSinceQuit }: GoalSettingProps) {
+export default function GoalSetting({ daysSinceQuit }: GoalSettingProps) {
+  const { userData, updateUserData } = useAuth()
   const [newGoalTitle, setNewGoalTitle] = useState("")
   const [newGoalTarget, setNewGoalTarget] = useState("")
   const [showAddForm, setShowAddForm] = useState(false)
@@ -181,10 +177,13 @@ export default function GoalSetting({ userData, updateUserData, daysSinceQuit }:
   const [selectedReaction, setSelectedReaction] = useState("")
   const [goalsInitialized, setGoalsInitialized] = useState(false)
 
+  // Get goals from userData or initialize empty array
+  const goals = userData?.goals || []
+
   // Initialize predefined goals on component mount
   useEffect(() => {
-    if (!goalsInitialized && userData.goals) {
-      const existingGoalIds = userData.goals.map((g) => g.id)
+    if (!goalsInitialized && userData && updateUserData) {
+      const existingGoalIds = goals.map((g) => g.id)
       const newGoals = PREDEFINED_GOALS.filter((pg) => !existingGoalIds.includes(pg.id)).map((pg) => ({
         id: pg.id,
         title: pg.title,
@@ -195,15 +194,15 @@ export default function GoalSetting({ userData, updateUserData, daysSinceQuit }:
       }))
 
       if (newGoals.length > 0) {
-        const updatedGoals = [...userData.goals, ...newGoals].sort((a, b) => a.target - b.target)
+        const updatedGoals = [...goals, ...newGoals].sort((a, b) => a.target - b.target)
         updateUserData({ goals: updatedGoals })
       }
       setGoalsInitialized(true)
     }
-  }, [userData.goals, updateUserData, goalsInitialized])
+  }, [userData, updateUserData, goals, goalsInitialized])
 
-  const addCustomGoal = () => {
-    if (!newGoalTitle.trim() || !newGoalTarget) return
+  const addCustomGoal = async () => {
+    if (!newGoalTitle.trim() || !newGoalTarget || !updateUserData) return
 
     const newGoal: Goal = {
       id: `custom_${Date.now()}`,
@@ -214,16 +213,18 @@ export default function GoalSetting({ userData, updateUserData, daysSinceQuit }:
       userReaction: "",
     }
 
-    const updatedGoals = [...userData.goals, newGoal].sort((a, b) => a.target - b.target)
-    updateUserData({ goals: updatedGoals })
+    const updatedGoals = [...goals, newGoal].sort((a, b) => a.target - b.target)
+    await updateUserData({ goals: updatedGoals })
 
     setNewGoalTitle("")
     setNewGoalTarget("")
     setShowAddForm(false)
   }
 
-  const updateGoalReaction = (goalId: string, comment: string, reaction: string) => {
-    const updatedGoals = userData.goals.map((goal) => {
+  const updateGoalReaction = async (goalId: string, comment: string, reaction: string) => {
+    if (!updateUserData) return
+
+    const updatedGoals = goals.map((goal) => {
       if (goal.id === goalId) {
         const isCompleted = daysSinceQuit >= goal.target
         return {
@@ -236,7 +237,8 @@ export default function GoalSetting({ userData, updateUserData, daysSinceQuit }:
       }
       return goal
     })
-    updateUserData({ goals: updatedGoals })
+
+    await updateUserData({ goals: updatedGoals })
     setSelectedGoal(null)
     setCommentText("")
     setSelectedReaction("")
@@ -253,11 +255,23 @@ export default function GoalSetting({ userData, updateUserData, daysSinceQuit }:
     return <Star className="w-5 h-5" />
   }
 
-  const completedGoals = userData.goals.filter((goal) => daysSinceQuit >= goal.target).length
-  const totalGoals = userData.goals.length
-  const nextGoal = userData.goals.find((goal) => daysSinceQuit < goal.target)
+  const completedGoals = goals.filter((goal) => daysSinceQuit >= goal.target).length
+  const totalGoals = goals.length
+  const nextGoal = goals.find((goal) => daysSinceQuit < goal.target)
 
   const reactions = ["❤️", "🎉", "💪", "🔥", "⭐", "🏆", "👏", "🎊", "💯", "🌟"]
+
+  // Show loading state if userData is not loaded yet
+  if (!userData) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <Target className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <p className="text-gray-500 mb-4">Loading your goals...</p>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -332,7 +346,7 @@ export default function GoalSetting({ userData, updateUserData, daysSinceQuit }:
 
       {/* Goals List */}
       <div className="space-y-3 max-h-96 overflow-y-auto">
-        {userData.goals
+        {goals
           .sort((a, b) => a.target - b.target)
           .map((goal) => {
             const progress = getGoalProgress(goal.target)
@@ -476,7 +490,7 @@ export default function GoalSetting({ userData, updateUserData, daysSinceQuit }:
         </Card>
       )}
 
-      {userData.goals.length === 0 && (
+      {goals.length === 0 && (
         <Card>
           <CardContent className="p-8 text-center">
             <Target className="w-12 h-12 text-gray-300 mx-auto mb-4" />

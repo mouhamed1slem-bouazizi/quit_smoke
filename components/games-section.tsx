@@ -15,6 +15,8 @@ import WordPuzzleGame from "./games/word-puzzle-game"
 import NumberSequenceGame from "./games/number-sequence-game"
 import PatternMatchingGame from "./games/pattern-matching-game"
 import BubblePopGame from "./games/bubble-pop-game"
+import WordSearchGame from "./games/word-search-game"
+import SudokuGame from "./games/sudoku-game"
 
 export default function GamesSection() {
   const [selectedGame, setSelectedGame] = useState<string | null>(null)
@@ -34,6 +36,20 @@ export default function GamesSection() {
   }
 
   const games = [
+    {
+      id: "sudoku",
+      title: "Sudoku",
+      description: "Solve number puzzles with logic and strategy",
+      icon: "🔢",
+      component: <SudokuGame onComplete={incrementGamesPlayed} />,
+    },
+    {
+      id: "word-search",
+      title: "Word Search",
+      description: "Find hidden words in a grid of letters",
+      icon: "🔍",
+      component: <WordSearchGame onComplete={incrementGamesPlayed} />,
+    },
     {
       id: "bubble-pop",
       title: "Bubble Pop",

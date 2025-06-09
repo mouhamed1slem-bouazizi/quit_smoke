@@ -23,6 +23,7 @@ import {
   Phone,
   Footprints,
 } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
 
 interface CravingEntry {
   id: string
@@ -50,10 +51,10 @@ interface ActivityDetail {
 
 interface CravingPageProps {
   daysSinceQuit: number
-  updateUserData: (data: any) => void
 }
 
-export default function CravingPage({ daysSinceQuit, updateUserData }: CravingPageProps) {
+export default function CravingPage({ daysSinceQuit }: CravingPageProps) {
+  const { currentUser, userData, updateUserData } = useAuth()
   const [cravings, setCravings] = useState<CravingEntry[]>([])
   const [selectedIntensity, setSelectedIntensity] = useState<number | null>(null)
   const [isRecording, setIsRecording] = useState(false)
@@ -218,17 +219,43 @@ export default function CravingPage({ daysSinceQuit, updateUserData }: CravingPa
     }
   }, [])
 
+  useEffect(() => {
+    // Load cravings from userData when it's available
+    if (userData?.cravings) {
+      setCravings(userData.cravings)
+    }
+  }, [userData])
+
   const loadCravings = () => {
-    const savedCravings = localStorage.getItem("cravingEntries")
-    if (savedCravings) {
-      setCravings(JSON.parse(savedCravings))
+    // First try to load from userData, then fallback to localStorage
+    if (userData?.cravings) {
+      setCravings(userData.cravings)
+    } else {
+      const savedCravings = localStorage.getItem("cravingEntries")
+      if (savedCravings) {
+        setCravings(JSON.parse(savedCravings))
+      }
     }
   }
 
-  const saveCravings = (newCravings: CravingEntry[]) => {
+  const saveCravings = async (newCravings: CravingEntry[]) => {
     setCravings(newCravings)
+
+    // Save to localStorage as backup
     localStorage.setItem("cravingEntries", JSON.stringify(newCravings))
-    updateUserData({ lastCravingUpdate: Date.now() })
+
+    // Save to Firebase through auth context
+    if (currentUser && updateUserData) {
+      try {
+        await updateUserData({
+          cravings: newCravings,
+          lastCravingUpdate: Date.now(),
+        })
+      } catch (error) {
+        console.error("Error saving cravings to Firebase:", error)
+        // Data is still saved to localStorage as backup
+      }
+    }
   }
 
   const getCurrentTime = () => {
@@ -418,6 +445,18 @@ export default function CravingPage({ daysSinceQuit, updateUserData }: CravingPa
     } else {
       return `${minutesAgo}m ago`
     }
+  }
+
+  // Show loading state if user data is not loaded yet
+  if (!currentUser) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading craving tracker...</p>
+        </div>
+      </div>
+    )
   }
 
   const todayCravings = getTodayCravings()
