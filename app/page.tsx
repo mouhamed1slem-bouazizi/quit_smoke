@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Heart, Gamepad2, Target, Activity, Stethoscope, Trophy, BookOpen, Flame } from "lucide-react"
+import { Heart, Gamepad2, Target, Activity, Stethoscope, Trophy, BookOpen, Flame, User } from "lucide-react"
 import MotivationSection from "@/components/motivation-section"
 import ProgressTracker from "@/components/progress-tracker"
 import GamesSection from "@/components/games-section"
@@ -17,12 +17,26 @@ import DiaryPage from "@/components/diary-page"
 import CravingPage from "@/components/craving-page"
 import ActivitiesSuggestions from "@/components/activities-suggestions"
 import AchievementsSection from "@/components/achievements-section"
+import ProfilePage from "@/components/profile-page"
 
 interface UserData {
+  // Personal Information
+  name: string
+  age: number
+  gender: string
+  profilePicture: string
+  location: string
+  occupation: string
+
+  // Smoking Information
   quitDate: string
   smokesPerDay: number
   costPerPack: number
   cigarettesPerPack: number
+  yearsSmoked: number
+  reasonToQuit: string
+
+  // App Data
   goals: Array<{
     id: string
     title: string
@@ -42,10 +56,15 @@ export default function QuitSmokingApp() {
   const [userData, setUserData] = useState<UserData | null>(null)
   const [isSetup, setIsSetup] = useState(false)
   const [setupData, setSetupData] = useState({
+    name: "",
+    age: 25,
+    gender: "",
     smokesPerDay: 20,
     costPerPack: 10,
     cigarettesPerPack: 20,
-    quitDate: new Date().toISOString().split("T")[0], // Default to today
+    yearsSmoked: 1,
+    reasonToQuit: "",
+    quitDate: new Date().toISOString().split("T")[0],
   })
 
   useEffect(() => {
@@ -59,10 +78,23 @@ export default function QuitSmokingApp() {
 
   const handleSetup = () => {
     const newUserData: UserData = {
-      quitDate: new Date(setupData.quitDate + "T00:00:00").toISOString(), // Convert to full ISO string
+      // Personal Information
+      name: setupData.name,
+      age: setupData.age,
+      gender: setupData.gender,
+      profilePicture: "",
+      location: "",
+      occupation: "",
+
+      // Smoking Information
+      quitDate: new Date(setupData.quitDate + "T00:00:00").toISOString(),
       smokesPerDay: setupData.smokesPerDay,
       costPerPack: setupData.costPerPack,
       cigarettesPerPack: setupData.cigarettesPerPack,
+      yearsSmoked: setupData.yearsSmoked,
+      reasonToQuit: setupData.reasonToQuit,
+
+      // App Data (existing goals and achievements)
       goals: [
         { id: "1", title: "24 Hours Smoke-Free", target: 1, completed: false },
         { id: "2", title: "1 Week Smoke-Free", target: 7, completed: false },
@@ -154,6 +186,67 @@ export default function QuitSmokingApp() {
                 <p className="text-xs text-gray-500 mt-1">Select today if you're quitting right now</p>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium mb-2">Your Name (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="Enter your name"
+                  value={setupData.name}
+                  onChange={(e) => setSetupData({ ...setupData, name: e.target.value })}
+                  className="w-full p-3 border rounded-lg"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Age</label>
+                  <input
+                    type="number"
+                    value={setupData.age}
+                    onChange={(e) => setSetupData({ ...setupData, age: Number.parseInt(e.target.value) || 25 })}
+                    className="w-full p-3 border rounded-lg"
+                    min="1"
+                    max="120"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Gender (Optional)</label>
+                  <select
+                    value={setupData.gender}
+                    onChange={(e) => setSetupData({ ...setupData, gender: e.target.value })}
+                    className="w-full p-3 border rounded-lg"
+                  >
+                    <option value="">Select</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                    <option value="prefer-not-to-say">Prefer not to say</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">How many years did you smoke?</label>
+                <input
+                  type="number"
+                  value={setupData.yearsSmoked}
+                  onChange={(e) => setSetupData({ ...setupData, yearsSmoked: Number.parseInt(e.target.value) || 1 })}
+                  className="w-full p-3 border rounded-lg"
+                  min="0"
+                  max="80"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Why did you decide to quit? (Optional)</label>
+                <textarea
+                  placeholder="Share your motivation..."
+                  value={setupData.reasonToQuit}
+                  onChange={(e) => setSetupData({ ...setupData, reasonToQuit: e.target.value })}
+                  className="w-full p-3 border rounded-lg h-20 resize-none"
+                />
+              </div>
+
               <Button onClick={handleSetup} className="w-full bg-green-600 hover:bg-green-700">
                 Start My Journey 🚀
               </Button>
@@ -180,7 +273,7 @@ export default function QuitSmokingApp() {
         {/* Main Content */}
         <div className="p-4">
           <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="grid w-full grid-cols-8 mb-4 text-xs">
+            <TabsList className="grid w-full grid-cols-9 mb-4 text-xs">
               <TabsTrigger value="dashboard" className="p-2">
                 <Heart className="w-3 h-3" />
               </TabsTrigger>
@@ -204,6 +297,9 @@ export default function QuitSmokingApp() {
               </TabsTrigger>
               <TabsTrigger value="activities" className="p-2">
                 <Activity className="w-3 h-3" />
+              </TabsTrigger>
+              <TabsTrigger value="profile" className="p-2">
+                <User className="w-3 h-3" />
               </TabsTrigger>
             </TabsList>
 
@@ -241,6 +337,10 @@ export default function QuitSmokingApp() {
 
             <TabsContent value="activities">
               <ActivitiesSuggestions />
+            </TabsContent>
+
+            <TabsContent value="profile">
+              <ProfilePage userData={userData!} updateUserData={updateUserData} daysSinceQuit={daysSinceQuit} />
             </TabsContent>
           </Tabs>
         </div>
