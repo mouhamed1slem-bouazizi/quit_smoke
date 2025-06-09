@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { Resend } from "resend"
 
 // Developer email constant
-const DEVELOPER_EMAIL = "mib@programmer.net"
+const DEVELOPER_EMAIL = "mibtn10@gmail.com"
 
 // Initialize Resend with API key
 const resend = new Resend(process.env.RESEND_API_KEY)

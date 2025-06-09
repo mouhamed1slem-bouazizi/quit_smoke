@@ -35,7 +35,7 @@ interface ProfilePageProps {
 }
 
 // Developer email constant - used for sending feedback
-const DEVELOPER_EMAIL = "mib@programmer.net"
+const DEVELOPER_EMAIL = "mibtn10@gmail.com"
 
 export default function ProfilePage({ daysSinceQuit }: ProfilePageProps) {
   const { userData, updateUserData, logout, currentUser } = useAuth()
