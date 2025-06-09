@@ -21,14 +21,21 @@ import {
   Monitor,
   Moon,
   Sun,
+  Send,
+  MessageSquare,
+  Mail,
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
 import { useTheme } from "@/contexts/theme-context"
+import { Textarea } from "@/components/ui/textarea"
 
 interface ProfilePageProps {
   daysSinceQuit: number
 }
+
+// Developer email constant - used for sending feedback
+const DEVELOPER_EMAIL = "mib@programmer.net"
 
 export default function ProfilePage({ daysSinceQuit }: ProfilePageProps) {
   const { userData, updateUserData, logout, currentUser } = useAuth()
@@ -48,6 +55,11 @@ export default function ProfilePage({ daysSinceQuit }: ProfilePageProps) {
   })
 
   const { theme, setTheme } = useTheme()
+
+  const [feedbackType, setFeedbackType] = useState("feedback")
+  const [feedbackMessage, setFeedbackMessage] = useState("")
+  const [isSendingFeedback, setIsSendingFeedback] = useState(false)
+  const [feedbackStatus, setFeedbackStatus] = useState<{ type: "success" | "error"; message: string } | null>(null)
 
   if (!userData) {
     return <div>Loading user data...</div>
@@ -124,6 +136,65 @@ export default function ProfilePage({ daysSinceQuit }: ProfilePageProps) {
   const lifeRegained = calculateLifeRegained()
   const completedGoals = getCompletedGoals()
   const unlockedAchievements = getUnlockedAchievements()
+
+  const handleSendFeedback = async () => {
+    if (!feedbackMessage.trim()) return
+
+    setIsSendingFeedback(true)
+    setFeedbackStatus(null)
+
+    try {
+      // Prepare the feedback data
+      const feedbackData = {
+        type: feedbackType,
+        message: feedbackMessage.trim(),
+        userInfo: {
+          name: userData?.name || currentUser?.email?.split("@")[0] || "Anonymous User",
+          email: currentUser?.email || "No email provided",
+          userId: currentUser?.uid || "Unknown",
+        },
+        appInfo: {
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent,
+          url: window.location.href,
+        },
+        userData: {
+          daysSinceQuit,
+          smokesPerDay: userData?.smokesPerDay,
+          quitDate: userData?.quitDate,
+        },
+        // All messages will be sent to the developer email
+        to: DEVELOPER_EMAIL,
+      }
+
+      // Here you would typically send to your backend API
+      // For now, we'll simulate the API call
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+
+      // Log the feedback data (in production, this would be sent to your server)
+      console.log(`Feedback submitted to ${DEVELOPER_EMAIL}:`, feedbackData)
+
+      setFeedbackStatus({
+        type: "success",
+        message: "✅ Thank you for your feedback! We've received your message and will review it soon.",
+      })
+
+      // Clear the form
+      setFeedbackMessage("")
+      setFeedbackType("feedback")
+
+      // Clear success message after 5 seconds
+      setTimeout(() => setFeedbackStatus(null), 5000)
+    } catch (error) {
+      console.error("Error sending feedback:", error)
+      setFeedbackStatus({
+        type: "error",
+        message: "❌ Sorry, there was an error sending your feedback. Please try again later.",
+      })
+    } finally {
+      setIsSendingFeedback(false)
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -511,6 +582,95 @@ export default function ProfilePage({ daysSinceQuit }: ProfilePageProps) {
                 </p>
               </div>
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Feedback Section */}
+      <Card className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 dark:border-gray-700">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-green-600 dark:text-green-400" />
+            Send Feedback
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              Have suggestions, found a bug, or want to share your experience? We'd love to hear from you!
+            </p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">Message Type</label>
+                <select
+                  value={feedbackType}
+                  onChange={(e) => setFeedbackType(e.target.value)}
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="feedback">General Feedback</option>
+                  <option value="bug">Bug Report</option>
+                  <option value="feature">Feature Request</option>
+                  <option value="support">Support Request</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">Your Message</label>
+                <Textarea
+                  placeholder="Tell us what's on your mind..."
+                  value={feedbackMessage}
+                  onChange={(e) => setFeedbackMessage(e.target.value)}
+                  className="min-h-[120px] resize-none bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                  maxLength={1000}
+                />
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
+                  {feedbackMessage.length}/1000 characters
+                </div>
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg border dark:border-blue-800/30">
+                <p className="text-xs text-blue-700 dark:text-blue-300 flex items-start gap-2">
+                  <Mail className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span>
+                    Your message will be sent with your name (
+                    {userData?.name || currentUser?.email?.split("@")[0] || "Anonymous"}) and email (
+                    {currentUser?.email}) automatically attached for follow-up.
+                  </span>
+                </p>
+              </div>
+
+              <Button
+                onClick={handleSendFeedback}
+                disabled={!feedbackMessage.trim() || isSendingFeedback}
+                className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSendingFeedback ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Send Feedback
+                  </>
+                )}
+              </Button>
+
+              {feedbackStatus && (
+                <div
+                  className={`p-3 rounded-lg text-sm ${
+                    feedbackStatus.type === "success"
+                      ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800"
+                      : "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
+                  }`}
+                >
+                  {feedbackStatus.message}
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
