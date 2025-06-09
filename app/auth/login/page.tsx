@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAuth } from "@/contexts/auth-context"
-import { Loader2 } from "lucide-react"
+import { Loader2, Wifi, WifiOff } from "lucide-react"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -19,7 +19,7 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const { login } = useAuth()
+  const { login, offlineMode } = useAuth()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -33,8 +33,6 @@ export default function LoginPage() {
       setError("")
       setLoading(true)
       await login(email, password)
-
-      // Check if user has completed setup
       router.push("/")
     } catch (err) {
       console.error(err)
@@ -45,13 +43,39 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Welcome Back</CardTitle>
-          <CardDescription className="text-center">Enter your credentials to access your account</CardDescription>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
+            <div className="flex items-center gap-1 text-sm text-gray-500">
+              {offlineMode ? (
+                <>
+                  <WifiOff className="h-4 w-4" />
+                  <span>Offline</span>
+                </>
+              ) : (
+                <>
+                  <Wifi className="h-4 w-4" />
+                  <span>Online</span>
+                </>
+              )}
+            </div>
+          </div>
+          <CardDescription className="text-center">
+            {offlineMode
+              ? "Running in offline mode - your data will be saved locally"
+              : "Enter your credentials to access your account"}
+          </CardDescription>
         </CardHeader>
         <CardContent>
+          {offlineMode && (
+            <Alert className="mb-4">
+              <AlertDescription>
+                You're in offline mode. You can still use the app, but data won't sync until you're back online.
+              </AlertDescription>
+            </Alert>
+          )}
           {error && (
             <Alert variant="destructive" className="mb-4">
               <AlertDescription>{error}</AlertDescription>
@@ -78,11 +102,13 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
               />
-              <div className="text-right text-sm">
-                <Link href="/auth/forgot-password" className="text-blue-600 hover:underline">
-                  Forgot password?
-                </Link>
-              </div>
+              {!offlineMode && (
+                <div className="text-right text-sm">
+                  <Link href="/auth/forgot-password" className="text-blue-600 hover:underline">
+                    Forgot password?
+                  </Link>
+                </div>
+              )}
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? (

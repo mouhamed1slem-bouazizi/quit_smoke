@@ -17,22 +17,87 @@ import PatternMatchingGame from "./games/pattern-matching-game"
 import BubblePopGame from "./games/bubble-pop-game"
 import WordSearchGame from "./games/word-search-game"
 import SudokuGame from "./games/sudoku-game"
+import ConnectDotsGame from "./games/connect-dots-game"
+import TetrisGame from "./games/tetris-game"
+import WaterSortGame from "./games/water-sort-game"
 
 export default function GamesSection() {
   const [selectedGame, setSelectedGame] = useState<string | null>(null)
   const [gamesPlayed, setGamesPlayed] = useState(0)
 
+  // Load games played count on initial render
   useEffect(() => {
-    const saved = localStorage.getItem("gamesPlayed")
-    if (saved) {
-      setGamesPlayed(Number.parseInt(saved))
-    }
+    loadGamesPlayedCount()
   }, [])
 
+  // Function to get today's date in YYYY-MM-DD format
+  const getTodayDateKey = () => {
+    const today = new Date()
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
+  }
+
+  // Load games played count for today
+  const loadGamesPlayedCount = () => {
+    const todayKey = getTodayDateKey()
+
+    // Try the new format first
+    const savedData = localStorage.getItem("gamesPlayedData")
+    if (savedData) {
+      try {
+        const data = JSON.parse(savedData)
+        const todayCount = data[todayKey] || 0
+        setGamesPlayed(todayCount)
+        return
+      } catch (e) {
+        console.error("Error parsing games played data:", e)
+      }
+    }
+
+    // Fallback to old format
+    const oldSaved = localStorage.getItem("gamesPlayed")
+    if (oldSaved) {
+      const count = Number.parseInt(oldSaved) || 0
+      setGamesPlayed(count)
+    } else {
+      setGamesPlayed(0)
+    }
+  }
+
+  // Increment games played count
   const incrementGamesPlayed = () => {
+    const todayKey = getTodayDateKey()
     const newCount = gamesPlayed + 1
+
     setGamesPlayed(newCount)
+
+    // Save to localStorage with date tracking
+    const savedData = localStorage.getItem("gamesPlayedData")
+    let data = {}
+
+    if (savedData) {
+      try {
+        data = JSON.parse(savedData)
+      } catch (e) {
+        console.error("Error parsing games played data:", e)
+      }
+    }
+
+    data[todayKey] = newCount
+    localStorage.setItem("gamesPlayedData", JSON.stringify(data))
+
+    // Also save in old format for compatibility
     localStorage.setItem("gamesPlayed", newCount.toString())
+  }
+
+  // Handle game selection and increment counter
+  const handleGameSelect = (gameId: string) => {
+    incrementGamesPlayed()
+    setSelectedGame(gameId)
+  }
+
+  // Dummy onComplete function since we're not using it anymore
+  const dummyOnComplete = () => {
+    // No longer needed since we count on play, not completion
   }
 
   const games = [
@@ -41,70 +106,91 @@ export default function GamesSection() {
       title: "Sudoku",
       description: "Solve number puzzles with logic and strategy",
       icon: "🔢",
-      component: <SudokuGame onComplete={incrementGamesPlayed} />,
+      component: <SudokuGame onComplete={dummyOnComplete} />,
     },
     {
       id: "word-search",
       title: "Word Search",
       description: "Find hidden words in a grid of letters",
       icon: "🔍",
-      component: <WordSearchGame onComplete={incrementGamesPlayed} />,
+      component: <WordSearchGame onComplete={dummyOnComplete} />,
     },
     {
       id: "bubble-pop",
       title: "Bubble Pop",
       description: "Pop bubbles to relieve stress and improve focus",
       icon: "🫧",
-      component: <BubblePopGame onComplete={incrementGamesPlayed} />,
+      component: <BubblePopGame onComplete={dummyOnComplete} />,
     },
     {
       id: "memory",
       title: "Memory Match",
       description: "Match pairs of cards to improve focus",
       icon: "🧠",
-      component: <MemoryGame onComplete={incrementGamesPlayed} />,
+      component: <MemoryGame onComplete={dummyOnComplete} />,
     },
     {
       id: "reaction",
       title: "Reaction Time",
       description: "Test your reflexes and stay alert",
       icon: "⚡",
-      component: <ReactionGame onComplete={incrementGamesPlayed} />,
+      component: <ReactionGame onComplete={dummyOnComplete} />,
     },
     {
       id: "breathing",
       title: "Breathing Exercise",
       description: "Calm your mind with guided breathing",
       icon: "🫁",
-      component: <BreathingGame onComplete={incrementGamesPlayed} />,
+      component: <BreathingGame onComplete={dummyOnComplete} />,
     },
     {
       id: "color-memory",
       title: "Color Memory",
       description: "Remember and repeat color sequences",
       icon: "🎨",
-      component: <ColorMemoryGame onComplete={incrementGamesPlayed} />,
+      component: <ColorMemoryGame onComplete={dummyOnComplete} />,
     },
     {
       id: "word-puzzle",
       title: "Word Puzzle",
       description: "Find hidden words and improve vocabulary",
       icon: "📝",
-      component: <WordPuzzleGame onComplete={incrementGamesPlayed} />,
+      component: <WordPuzzleGame onComplete={dummyOnComplete} />,
     },
     {
       id: "number-sequence",
       title: "Number Sequence",
       description: "Solve mathematical patterns and sequences",
       icon: "🔢",
-      component: <NumberSequenceGame onComplete={incrementGamesPlayed} />,
+      component: <NumberSequenceGame onComplete={dummyOnComplete} />,
     },
     {
       id: "pattern-matching",
       title: "Pattern Matching",
       description: "Match visual patterns and logical sequences",
       icon: "🧩",
-      component: <PatternMatchingGame onComplete={incrementGamesPlayed} />,
+      component: <PatternMatchingGame onComplete={dummyOnComplete} />,
+    },
+    {
+      id: "connect-dots",
+      title: "Connect the Dots",
+      description: "Connect numbered dots in sequence to reveal patterns",
+      icon: "🔗",
+      component: <ConnectDotsGame onComplete={dummyOnComplete} />,
+    },
+    {
+      id: "tetris",
+      title: "Tetris Blocks",
+      description: "Clear lines with falling blocks in this classic puzzle",
+      icon: "🧩",
+      component: <TetrisGame onComplete={dummyOnComplete} />,
+    },
+    {
+      id: "water-sort",
+      title: "Water Color Sort",
+      description: "Sort colored water between tubes until each contains one color",
+      icon: "🧪",
+      component: <WaterSortGame onComplete={dummyOnComplete} />,
     },
   ]
 
@@ -118,7 +204,7 @@ export default function GamesSection() {
           </Button>
           <Badge variant="secondary">
             <Trophy className="w-3 h-3 mr-1" />
-            {gamesPlayed} played
+            {gamesPlayed} played today
           </Badge>
         </div>
         {game?.component}
@@ -151,13 +237,15 @@ export default function GamesSection() {
         {games.map((game) => (
           <Card key={game.id} className="cursor-pointer hover:shadow-md transition-shadow">
             <CardContent className="p-4">
-              <div className="flex items-center gap-4" onClick={() => setSelectedGame(game.id)}>
+              <div className="flex items-center gap-4">
                 <div className="text-2xl">{game.icon}</div>
-                <div className="flex-1">
+                <div className="flex-1" onClick={() => handleGameSelect(game.id)}>
                   <h3 className="font-semibold">{game.title}</h3>
                   <p className="text-sm text-gray-600">{game.description}</p>
                 </div>
-                <Button size="sm">Play</Button>
+                <Button size="sm" onClick={() => handleGameSelect(game.id)}>
+                  Play
+                </Button>
               </div>
             </CardContent>
           </Card>

@@ -20,42 +20,57 @@ import ProfilePage from "@/components/profile-page"
 import { useAuth } from "@/contexts/auth-context"
 
 export default function QuitSmokingApp() {
-  const { currentUser, userData, loading, dataLoading } = useAuth()
+  const { currentUser, userData, loading, dataLoading, userSetupCompleted, checkUserSetup } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    console.log("App state:", { currentUser: !!currentUser, userData: !!userData, loading, dataLoading })
+    async function checkAuth() {
+      console.log("App state:", {
+        currentUser: !!currentUser,
+        userData: !!userData,
+        loading,
+        dataLoading,
+        userSetupCompleted,
+      })
 
-    // Don't redirect while still loading
-    if (loading || dataLoading) {
-      return
+      // Don't redirect while still loading
+      if (loading || dataLoading) {
+        return
+      }
+
+      // If no user is logged in, redirect to login
+      if (!currentUser) {
+        console.log("No user logged in, redirecting to login")
+        router.push("/auth/login")
+        return
+      }
+
+      // Check if user has completed setup
+      const isSetupCompleted = await checkUserSetup()
+
+      // If user is logged in but setup is not completed, redirect to setup
+      if (currentUser && !isSetupCompleted) {
+        console.log("User logged in but setup not completed, redirecting to setup")
+        router.push("/auth/setup")
+        return
+      }
+
+      // If we have both user and userData, stay on dashboard
+      console.log("User and data both available, staying on dashboard")
     }
 
-    // If no user is logged in, redirect to login
-    if (!currentUser) {
-      console.log("No user logged in, redirecting to login")
-      router.push("/auth/login")
-      return
-    }
-
-    // If user is logged in but no user data exists, redirect to setup
-    if (currentUser && !userData) {
-      console.log("User logged in but no data found, redirecting to setup")
-      router.push("/auth/setup")
-      return
-    }
-
-    // If we have both user and userData, stay on dashboard
-    console.log("User and data both available, staying on dashboard")
-  }, [currentUser, userData, loading, dataLoading, router])
+    checkAuth()
+  }, [currentUser, userData, loading, dataLoading, userSetupCompleted, router, checkUserSetup])
 
   // Show loading while authentication or data is loading
   if (loading || dataLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">{loading ? "Checking authentication..." : "Loading your data..."}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 dark:border-green-400 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-300">
+            {loading ? "Checking authentication..." : "Loading your data..."}
+          </p>
         </div>
       </div>
     )
@@ -64,10 +79,10 @@ export default function QuitSmokingApp() {
   // Show loading if we don't have the required data yet
   if (!currentUser || !userData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your journey...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 dark:border-green-400 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-300">Loading your journey...</p>
         </div>
       </div>
     )
@@ -83,13 +98,13 @@ export default function QuitSmokingApp() {
   const daysSinceQuit = getDaysSinceQuit()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
       <div className="max-w-md mx-auto">
         {/* Header */}
-        <div className="bg-white shadow-sm p-4 sticky top-0 z-10">
+        <div className="bg-white dark:bg-gray-800 shadow-sm p-4 sticky top-0 z-10">
           <div className="text-center">
-            <h1 className="text-xl font-bold text-green-600">Smoke-Free Journey</h1>
-            <p className="text-sm text-gray-600">Day {daysSinceQuit} • Keep going strong! 💪</p>
+            <h1 className="text-xl font-bold text-green-600 dark:text-green-400">Smoke-Free Journey</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Day {daysSinceQuit} • Keep going strong! 💪</p>
           </div>
         </div>
 

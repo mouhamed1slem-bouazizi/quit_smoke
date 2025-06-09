@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -11,8 +11,9 @@ import { Loader2 } from "lucide-react"
 export default function SetupPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [checkingSetup, setCheckingSetup] = useState(true)
   const router = useRouter()
-  const { currentUser, setupUserData } = useAuth()
+  const { currentUser, userData, setupUserData, checkUserSetup, userSetupCompleted } = useAuth()
 
   const [setupData, setSetupData] = useState({
     smokesPerDay: 20,
@@ -22,6 +23,39 @@ export default function SetupPage() {
     reasonToQuit: "",
     quitDate: new Date().toISOString().split("T")[0], // Default to today
   })
+
+  // Check if user has already completed setup
+  useEffect(() => {
+    async function checkSetupStatus() {
+      if (!currentUser) {
+        router.push("/auth/login")
+        return
+      }
+
+      try {
+        const isSetupCompleted = await checkUserSetup()
+
+        if (isSetupCompleted) {
+          console.log("User setup already completed, redirecting to dashboard")
+          router.push("/")
+        }
+      } catch (err) {
+        console.error("Error checking setup status:", err)
+      } finally {
+        setCheckingSetup(false)
+      }
+    }
+
+    checkSetupStatus()
+  }, [currentUser, router, checkUserSetup])
+
+  // If user data exists, redirect to dashboard
+  useEffect(() => {
+    if (userSetupCompleted && !checkingSetup) {
+      console.log("User setup completed, redirecting to dashboard")
+      router.push("/")
+    }
+  }, [userSetupCompleted, router, checkingSetup])
 
   async function handleSetup() {
     try {
@@ -48,6 +82,7 @@ export default function SetupPage() {
         cigarettesPerPack: setupData.cigarettesPerPack,
         yearsSmoked: setupData.yearsSmoked,
         reasonToQuit: setupData.reasonToQuit,
+        setupCompleted: true,
 
         // App Data
         goals: [
@@ -74,13 +109,27 @@ export default function SetupPage() {
     }
   }
 
+  // Show loading while checking setup status
+  if (checkingSetup) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-4 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-green-600 dark:text-green-400" />
+          <p className="text-gray-600 dark:text-gray-300">Checking your profile...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="max-w-md mx-auto pt-20">
-        <Card>
+        <Card className="dark:bg-gray-800 border-0 shadow-lg">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-green-600">🌟 Start Your Smoke-Free Journey</CardTitle>
-            <p className="text-gray-600">Let's set up your personalized quit plan</p>
+            <CardTitle className="text-2xl font-bold text-green-600 dark:text-green-400">
+              🌟 Start Your Smoke-Free Journey
+            </CardTitle>
+            <p className="text-gray-600 dark:text-gray-300">Let's set up your personalized quit plan</p>
           </CardHeader>
           <CardContent className="space-y-6">
             {error && (
@@ -90,74 +139,82 @@ export default function SetupPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium mb-2">How many cigarettes did you smoke per day?</label>
+              <label className="block text-sm font-medium mb-2 dark:text-gray-200">
+                How many cigarettes did you smoke per day?
+              </label>
               <input
                 type="number"
                 value={setupData.smokesPerDay}
                 onChange={(e) => setSetupData({ ...setupData, smokesPerDay: Number.parseInt(e.target.value) })}
-                className="w-full p-3 border rounded-lg"
+                className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 min="1"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Cost per pack ($)</label>
+              <label className="block text-sm font-medium mb-2 dark:text-gray-200">Cost per pack ($)</label>
               <input
                 type="number"
                 value={setupData.costPerPack}
                 onChange={(e) => setSetupData({ ...setupData, costPerPack: Number.parseFloat(e.target.value) })}
-                className="w-full p-3 border rounded-lg"
+                className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 min="0"
                 step="0.01"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Cigarettes per pack</label>
+              <label className="block text-sm font-medium mb-2 dark:text-gray-200">Cigarettes per pack</label>
               <input
                 type="number"
                 value={setupData.cigarettesPerPack}
                 onChange={(e) => setSetupData({ ...setupData, cigarettesPerPack: Number.parseInt(e.target.value) })}
-                className="w-full p-3 border rounded-lg"
+                className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 min="1"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">When did you quit smoking?</label>
+              <label className="block text-sm font-medium mb-2 dark:text-gray-200">When did you quit smoking?</label>
               <input
                 type="date"
                 value={setupData.quitDate || new Date().toISOString().split("T")[0]}
                 onChange={(e) => setSetupData({ ...setupData, quitDate: e.target.value })}
-                className="w-full p-3 border rounded-lg"
+                className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 max={new Date().toISOString().split("T")[0]}
               />
-              <p className="text-xs text-gray-500 mt-1">Select today if you're quitting right now</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Select today if you're quitting right now</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">How many years did you smoke?</label>
+              <label className="block text-sm font-medium mb-2 dark:text-gray-200">How many years did you smoke?</label>
               <input
                 type="number"
                 value={setupData.yearsSmoked}
                 onChange={(e) => setSetupData({ ...setupData, yearsSmoked: Number.parseInt(e.target.value) || 1 })}
-                className="w-full p-3 border rounded-lg"
+                className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 min="0"
                 max="80"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Why did you decide to quit? (Optional)</label>
+              <label className="block text-sm font-medium mb-2 dark:text-gray-200">
+                Why did you decide to quit? (Optional)
+              </label>
               <textarea
                 placeholder="Share your motivation..."
                 value={setupData.reasonToQuit}
                 onChange={(e) => setSetupData({ ...setupData, reasonToQuit: e.target.value })}
-                className="w-full p-3 border rounded-lg h-20 resize-none"
+                className="w-full p-3 border rounded-lg h-20 resize-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               />
             </div>
 
-            <Button onClick={handleSetup} className="w-full bg-green-600 hover:bg-green-700" disabled={loading}>
+            <Button
+              onClick={handleSetup}
+              className="w-full bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
+              disabled={loading}
+            >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

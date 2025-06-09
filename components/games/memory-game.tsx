@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { RotateCcw } from "lucide-react"
+import { RotateCcw, Brain } from "lucide-react"
 
 interface MemoryGameProps {
   onComplete: () => void
@@ -261,122 +261,149 @@ export default function MemoryGame({ onComplete }: MemoryGameProps) {
   const isGameOver = lives <= 0 || (level > 100 && gameComplete)
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Memory Match</span>
-          <div className="flex gap-2">
-            <Badge variant="outline">Level: {level}/100</Badge>
-            <Badge variant="outline">Score: {score}</Badge>
-            <Button size="sm" variant="outline" onClick={initializeGame}>
-              <RotateCcw className="w-4 h-4" />
-            </Button>
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {/* Game Info */}
-        <div className="grid grid-cols-4 gap-2 mb-4 text-center">
-          <div className="p-2 bg-gray-50 rounded">
-            <div className="text-xs text-gray-600">Difficulty</div>
-            <div className="font-semibold text-sm">{getDifficultyName()}</div>
-          </div>
-          <div className="p-2 bg-gray-50 rounded">
-            <div className="text-xs text-gray-600">Lives</div>
-            <div className="font-semibold text-sm">
-              {"❤️".repeat(lives)}
-              {"🤍".repeat(3 - lives)}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
+      <Card className="w-full max-w-4xl mx-auto bg-white/80 backdrop-blur-sm shadow-2xl border-0">
+        <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-lg">
+          <CardTitle className="flex items-center justify-between text-xl">
+            <div className="flex items-center gap-3">
+              <Brain className="w-6 h-6" />
+              <span>Memory Match</span>
             </div>
-          </div>
-          <div className="p-2 bg-gray-50 rounded">
-            <div className="text-xs text-gray-600">Moves</div>
-            <div className="font-semibold text-sm">{moves}</div>
-          </div>
-          <div className="p-2 bg-gray-50 rounded">
-            <div className="text-xs text-gray-600">Grid</div>
-            <div className="font-semibold text-sm">
-              {gridSize}×{gridSize}
+            <div className="flex gap-2">
+              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                Level: {level}/100
+              </Badge>
+              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                Score: {score}
+              </Badge>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={initializeGame}
+                className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </Button>
             </div>
-          </div>
-        </div>
+          </CardTitle>
+        </CardHeader>
 
-        {/* Timer */}
-        {timeLimit && timeLeft !== null && (
-          <div className="mb-4">
-            <div className="flex justify-between text-sm mb-1">
-              <span>Time Remaining:</span>
-              <span className={`font-semibold ${timeLeft <= 10 ? "text-red-600" : "text-blue-600"}`}>{timeLeft}s</span>
+        <CardContent className="p-6">
+          {/* Game Info */}
+          <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="p-4 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl shadow-lg">
+              <div className="text-xs text-blue-600 font-medium">Difficulty</div>
+              <div className="font-bold text-blue-800">{getDifficultyName()}</div>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="p-4 bg-gradient-to-br from-red-100 to-pink-200 rounded-xl shadow-lg">
+              <div className="text-xs text-red-600 font-medium">Lives</div>
+              <div className="font-bold text-red-800">
+                {"❤️".repeat(lives)}
+                {"🤍".repeat(3 - lives)}
+              </div>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-green-100 to-emerald-200 rounded-xl shadow-lg">
+              <div className="text-xs text-green-600 font-medium">Moves</div>
+              <div className="font-bold text-green-800">{moves}</div>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-purple-100 to-violet-200 rounded-xl shadow-lg">
+              <div className="text-xs text-purple-600 font-medium">Grid</div>
+              <div className="font-bold text-purple-800">
+                {gridSize}×{gridSize}
+              </div>
+            </div>
+          </div>
+
+          {/* Timer */}
+          {timeLimit && timeLeft !== null && (
+            <div className="mb-6 p-4 bg-gradient-to-r from-orange-100 to-yellow-100 rounded-xl shadow-lg">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="font-medium text-orange-700">Time Remaining:</span>
+                <span className={`font-bold ${timeLeft <= 10 ? "text-red-600" : "text-orange-600"}`}>{timeLeft}s</span>
+              </div>
+              <div className="w-full bg-white/50 rounded-full h-3 shadow-inner">
+                <div
+                  className={`h-3 rounded-full transition-all duration-1000 ${
+                    timeLeft <= 10
+                      ? "bg-gradient-to-r from-red-500 to-red-600"
+                      : "bg-gradient-to-r from-orange-500 to-yellow-500"
+                  }`}
+                  style={{ width: `${((timeLeft || 0) / timeLimit) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Game Over Screen */}
+          {isGameOver && (
+            <div className="text-center mb-6 p-6 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl border-2 border-purple-200 shadow-lg">
+              {level > 100 ? (
+                <div>
+                  <div className="text-4xl mb-3">👑</div>
+                  <p className="text-purple-700 font-bold text-xl">MEMORY MASTER!</p>
+                  <p className="text-purple-600">You completed all 100 levels!</p>
+                  <p className="text-gray-600 mt-2">Final Score: {score} points</p>
+                </div>
+              ) : (
+                <div>
+                  <div className="text-3xl mb-3">💔</div>
+                  <p className="text-red-700 font-bold text-lg">Game Over!</p>
+                  <p className="text-red-600">You reached level {level}</p>
+                  <p className="text-gray-600 mt-2">Score: {score} points</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Game Grid */}
+          {!isGameOver && (
+            <div className={`grid ${getGridCols()} gap-3 mb-6 max-w-2xl mx-auto`}>
+              {cards.map((card) => (
+                <div
+                  key={card.id}
+                  className={`aspect-square flex items-center justify-center text-2xl rounded-xl cursor-pointer transition-all duration-300 transform hover:scale-105 shadow-lg ${
+                    card.flipped || card.matched
+                      ? "bg-gradient-to-br from-white to-gray-50 shadow-xl rotate-0"
+                      : "bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg"
+                  } ${gridSize >= 6 ? "text-lg" : gridSize >= 7 ? "text-base" : ""}`}
+                  onClick={() => handleCardClick(card.id)}
+                >
+                  {card.flipped || card.matched ? (
+                    <span className="drop-shadow-sm">{card.value}</span>
+                  ) : (
+                    <span className="text-white font-bold text-xl">?</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Progress to Level 100 */}
+          <div className="space-y-3 mb-6">
+            <div className="flex justify-between text-sm font-medium">
+              <span className="text-gray-700">Overall Progress:</span>
+              <span className="text-blue-600">{level}/100</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
               <div
-                className={`h-2 rounded-full transition-all duration-1000 ${
-                  timeLeft <= 10 ? "bg-red-500" : "bg-blue-500"
-                }`}
-                style={{ width: `${((timeLeft || 0) / timeLimit) * 100}%` }}
+                className="bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full transition-all duration-500 shadow-sm"
+                style={{ width: `${(level / 100) * 100}%` }}
               />
             </div>
           </div>
-        )}
 
-        {/* Game Over Screen */}
-        {isGameOver && (
-          <div className="text-center mb-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border-2 border-purple-200">
-            {level > 100 ? (
-              <div>
-                <div className="text-3xl mb-2">👑</div>
-                <p className="text-purple-700 font-bold text-lg">MEMORY MASTER!</p>
-                <p className="text-sm text-purple-600">You completed all 100 levels!</p>
-                <p className="text-xs text-gray-600 mt-2">Final Score: {score} points</p>
-              </div>
-            ) : (
-              <div>
-                <div className="text-2xl mb-2">💔</div>
-                <p className="text-red-700 font-semibold">Game Over!</p>
-                <p className="text-sm text-red-600">You reached level {level}</p>
-                <p className="text-xs text-gray-600 mt-2">Score: {score} points</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Game Grid */}
-        {!isGameOver && (
-          <div className={`grid ${getGridCols()} gap-1 mb-4`}>
-            {cards.map((card) => (
-              <div
-                key={card.id}
-                className={`aspect-square flex items-center justify-center text-lg rounded-lg cursor-pointer transition-all ${
-                  card.flipped || card.matched ? "bg-white shadow-md" : "bg-gray-200 hover:bg-gray-300"
-                } ${gridSize >= 6 ? "text-sm" : gridSize >= 7 ? "text-xs" : ""}`}
-                onClick={() => handleCardClick(card.id)}
-              >
-                {card.flipped || card.matched ? card.value : "?"}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Progress to Level 100 */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Overall Progress:</span>
-            <span>{level}/100</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(level / 100) * 100}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Start Button */}
-        {isGameOver && (
-          <Button onClick={initializeGame} className="w-full mt-4">
-            {level > 100 ? "Play Again" : "Start Challenge (100 Levels)"}
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+          {/* Start Button */}
+          {isGameOver && (
+            <Button
+              onClick={initializeGame}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200"
+              size="lg"
+            >
+              {level > 100 ? "Play Again" : "Start Challenge (100 Levels)"}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   )
 }

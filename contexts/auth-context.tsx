@@ -12,7 +12,7 @@ import {
   updateProfile,
 } from "firebase/auth"
 import { doc, setDoc, getDoc } from "firebase/firestore"
-import { auth, db } from "@/lib/firebase"
+import { auth, db, isFirebaseAvailable } from "@/lib/firebase"
 
 interface CravingEntry {
   id: string
@@ -54,6 +54,10 @@ interface UserData {
   yearsSmoked: number
   reasonToQuit: string
 
+  // App Settings
+  themePreference?: "light" | "dark" | "system"
+  setupCompleted?: boolean
+
   // App Data
   goals: Array<{
     id: string
@@ -79,6 +83,8 @@ interface AuthContextType {
   userData: UserData | null
   loading: boolean
   dataLoading: boolean
+  userSetupCompleted: boolean
+  offlineMode: boolean
   signup: (email: string, password: string, displayName?: string) => Promise<User>
   login: (email: string, password: string) => Promise<User>
   logout: () => Promise<void>
@@ -87,6 +93,7 @@ interface AuthContextType {
   updateUserData: (data: Partial<UserData>) => Promise<void>
   setupUserData: (data: UserData) => Promise<void>
   refreshUserData: () => Promise<void>
+  checkUserSetup: () => Promise<boolean>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -104,14 +111,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userData, setUserData] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
   const [dataLoading, setDataLoading] = useState(false)
+  const [userSetupCompleted, setUserSetupCompleted] = useState(false)
+  const [offlineMode, setOfflineMode] = useState(!isFirebaseAvailable)
 
   async function signup(email: string, password: string, displayName?: string) {
+    if (!isFirebaseAvailable || offlineMode) {
+      // Create a mock user for offline mode
+      const mockUser = {
+        uid: `offline-${Date.now()}`,
+        email,
+        displayName: displayName || email.split("@")[0],
+        emailVerified: false,
+      } as User
+
+      setCurrentUser(mockUser)
+      return mockUser
+    }
+
     const result = await createUserWithEmailAndPassword(auth, email, password)
 
-    // Update profile immediately after creation if displayName is provided
     if (displayName && result.user) {
       await updateProfile(result.user, { displayName })
-      // Force refresh the user object to get updated displayName
       await result.user.reload()
     }
 
@@ -119,6 +139,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function login(email: string, password: string) {
+    if (!isFirebaseAvailable || offlineMode) {
+      // For offline mode, create a mock user and try to load data from localStorage
+      const mockUser = {
+        uid: `offline-${email.replace(/[^a-zA-Z0-9]/g, "")}`,
+        email,
+        displayName: email.split("@")[0],
+        emailVerified: false,
+      } as User
+
+      setCurrentUser(mockUser)
+
+      // Try to load existing user data from localStorage
+      const localData = localStorage.getItem(`userData_${mockUser.uid}`)
+      if (localData) {
+        const data = JSON.parse(localData) as UserData
+        setUserData(data)
+        setUserSetupCompleted(data.setupCompleted || false)
+      }
+
+      return mockUser
+    }
+
     const result = await signInWithEmailAndPassword(auth, email, password)
     return result.user
   }
@@ -126,10 +168,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function logout() {
     setCurrentUser(null)
     setUserData(null)
-    return await signOut(auth)
+    setUserSetupCompleted(false)
+
+    if (isFirebaseAvailable && !offlineMode) {
+      return await signOut(auth)
+    }
   }
 
   async function resetPassword(email: string) {
+    if (!isFirebaseAvailable || offlineMode) {
+      throw new Error("Password reset is not available in offline mode")
+    }
     return await sendPasswordResetEmail(auth, email)
   }
 
@@ -138,9 +187,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error("No user logged in")
     }
 
-    await updateProfile(currentUser, { displayName })
-    // Force refresh to get updated profile
-    await currentUser.reload()
+    if (isFirebaseAvailable && !offlineMode) {
+      await updateProfile(currentUser, { displayName })
+      await currentUser.reload()
+    }
   }
 
   async function setupUserData(data: UserData) {
@@ -148,22 +198,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error("No user logged in")
     }
 
-    try {
-      const userDocRef = doc(db, "users", currentUser.uid)
-      const dataWithTimestamps = {
-        ...data,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
-
-      await setDoc(userDocRef, dataWithTimestamps)
-      setUserData(data)
-    } catch (error) {
-      console.error("Error setting up user data:", error)
-      // Fallback to localStorage if Firestore fails
-      localStorage.setItem(`userData_${currentUser.uid}`, JSON.stringify(data))
-      setUserData(data)
+    const dataWithTimestamps = {
+      ...data,
+      setupCompleted: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }
+
+    try {
+      if (isFirebaseAvailable && !offlineMode) {
+        const userDocRef = doc(db, "users", currentUser.uid)
+        await setDoc(userDocRef, dataWithTimestamps)
+      }
+    } catch (error) {
+      console.error("Error saving to Firebase, using localStorage:", error)
+    }
+
+    // Always save to localStorage as backup
+    localStorage.setItem(`userData_${currentUser.uid}`, JSON.stringify(dataWithTimestamps))
+    setUserData(dataWithTimestamps)
+    setUserSetupCompleted(true)
   }
 
   async function updateUserData(data: Partial<UserData>) {
@@ -178,14 +232,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } as UserData
 
     try {
-      const userDocRef = doc(db, "users", currentUser.uid)
-      await setDoc(userDocRef, updatedData, { merge: true })
-      setUserData(updatedData)
+      if (isFirebaseAvailable && !offlineMode) {
+        const userDocRef = doc(db, "users", currentUser.uid)
+        await setDoc(userDocRef, updatedData, { merge: true })
+      }
     } catch (error) {
-      console.error("Error updating user data:", error)
-      // Fallback to localStorage if Firestore fails
-      localStorage.setItem(`userData_${currentUser.uid}`, JSON.stringify(updatedData))
-      setUserData(updatedData)
+      console.error("Error updating Firebase, using localStorage:", error)
+    }
+
+    // Always save to localStorage as backup
+    localStorage.setItem(`userData_${currentUser.uid}`, JSON.stringify(updatedData))
+    setUserData(updatedData)
+  }
+
+  async function checkUserSetup(): Promise<boolean> {
+    if (!currentUser) {
+      return false
+    }
+
+    try {
+      if (isFirebaseAvailable && !offlineMode) {
+        const userDocRef = doc(db, "users", currentUser.uid)
+        const userDoc = await getDoc(userDocRef)
+
+        if (userDoc.exists()) {
+          const data = userDoc.data() as UserData
+          const hasCompletedSetup =
+            data.setupCompleted === true ||
+            (data.quitDate && data.smokesPerDay && data.costPerPack && data.cigarettesPerPack)
+
+          setUserSetupCompleted(hasCompletedSetup)
+          return hasCompletedSetup
+        }
+      }
+
+      // Check localStorage
+      const localData = localStorage.getItem(`userData_${currentUser.uid}`)
+      if (localData) {
+        const data = JSON.parse(localData) as UserData
+        const hasCompletedSetup =
+          data.setupCompleted === true ||
+          (data.quitDate && data.smokesPerDay && data.costPerPack && data.cigarettesPerPack)
+
+        setUserSetupCompleted(hasCompletedSetup)
+        return hasCompletedSetup
+      }
+
+      setUserSetupCompleted(false)
+      return false
+    } catch (error) {
+      console.error("Error checking user setup:", error)
+      setUserSetupCompleted(false)
+      return false
     }
   }
 
@@ -196,23 +294,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       setDataLoading(true)
-      const userDocRef = doc(db, "users", currentUser.uid)
-      const userDoc = await getDoc(userDocRef)
 
-      if (userDoc.exists()) {
-        const data = userDoc.data() as UserData
-        console.log("User data loaded from Firebase:", data)
-        setUserData(data)
-      } else {
-        console.log("No user data found in Firebase, checking localStorage")
-        // Fallback to localStorage
-        const localData = localStorage.getItem(`userData_${currentUser.uid}`)
-        if (localData) {
-          const data = JSON.parse(localData) as UserData
+      if (isFirebaseAvailable && !offlineMode) {
+        const userDocRef = doc(db, "users", currentUser.uid)
+        const userDoc = await getDoc(userDocRef)
+
+        if (userDoc.exists()) {
+          const data = userDoc.data() as UserData
           setUserData(data)
-        } else {
-          setUserData(null)
+
+          const hasCompletedSetup =
+            data.setupCompleted === true ||
+            (data.quitDate && data.smokesPerDay && data.costPerPack && data.cigarettesPerPack)
+          setUserSetupCompleted(hasCompletedSetup)
+          return
         }
+      }
+
+      // Fallback to localStorage
+      const localData = localStorage.getItem(`userData_${currentUser.uid}`)
+      if (localData) {
+        const data = JSON.parse(localData) as UserData
+        setUserData(data)
+
+        const hasCompletedSetup =
+          data.setupCompleted === true ||
+          (data.quitDate && data.smokesPerDay && data.costPerPack && data.cigarettesPerPack)
+        setUserSetupCompleted(hasCompletedSetup)
+      } else {
+        setUserData(null)
+        setUserSetupCompleted(false)
       }
     } catch (error) {
       console.error("Error refreshing user data:", error)
@@ -223,6 +334,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUserData(data)
       } else {
         setUserData(null)
+        setUserSetupCompleted(false)
       }
     } finally {
       setDataLoading(false)
@@ -230,55 +342,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log("Auth state changed:", user ? "User logged in" : "User logged out")
+    if (!isFirebaseAvailable) {
+      setOfflineMode(true)
+      setLoading(false)
+      return
+    }
 
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       try {
         setCurrentUser(user)
 
         if (user) {
-          console.log("Fetching user data for:", user.uid)
           setDataLoading(true)
 
           try {
-            // Try to fetch user data from Firestore
             const userDocRef = doc(db, "users", user.uid)
             const userDoc = await getDoc(userDocRef)
 
             if (userDoc.exists()) {
               const data = userDoc.data() as UserData
-              console.log("User data found in Firebase:", data)
               setUserData(data)
+
+              const hasCompletedSetup =
+                data.setupCompleted === true ||
+                (data.quitDate && data.smokesPerDay && data.costPerPack && data.cigarettesPerPack)
+              setUserSetupCompleted(hasCompletedSetup)
             } else {
-              console.log("No user data document found in Firebase, checking localStorage")
-              // Fallback to localStorage
               const localData = localStorage.getItem(`userData_${user.uid}`)
               if (localData) {
                 const data = JSON.parse(localData) as UserData
-                console.log("User data found in localStorage:", data)
                 setUserData(data)
+
+                const hasCompletedSetup =
+                  data.setupCompleted === true ||
+                  (data.quitDate && data.smokesPerDay && data.costPerPack && data.cigarettesPerPack)
+                setUserSetupCompleted(hasCompletedSetup)
               } else {
-                console.log("No user data found anywhere")
                 setUserData(null)
+                setUserSetupCompleted(false)
               }
             }
           } catch (firestoreError) {
-            console.error("Firestore error, falling back to localStorage:", firestoreError)
-            // Fallback to localStorage
+            console.error("Firestore error:", firestoreError)
             const localData = localStorage.getItem(`userData_${user.uid}`)
             if (localData) {
               const data = JSON.parse(localData) as UserData
               setUserData(data)
             } else {
               setUserData(null)
+              setUserSetupCompleted(false)
             }
           }
         } else {
           setUserData(null)
+          setUserSetupCompleted(false)
         }
       } catch (error) {
         console.error("Error in auth state change:", error)
         setUserData(null)
+        setUserSetupCompleted(false)
       } finally {
         setLoading(false)
         setDataLoading(false)
@@ -293,6 +415,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userData,
     loading,
     dataLoading,
+    userSetupCompleted,
+    offlineMode,
     signup,
     login,
     logout,
@@ -301,6 +425,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateUserData,
     setupUserData,
     refreshUserData,
+    checkUserSetup,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

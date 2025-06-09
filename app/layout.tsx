@@ -1,17 +1,27 @@
 import type React from "react"
+import type { Metadata } from "next"
 import "./globals.css"
 import { AuthProvider } from "@/contexts/auth-context"
+import { ThemeProvider } from "@/contexts/theme-context"
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export const metadata: Metadata = {
+  title: "Quit Smoking App",
+  description: "Your journey to a smoke-free life",
+    generator: 'v0.dev'
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   )
 }
-
-export const metadata = {
-      generator: 'v0.dev'
-    };

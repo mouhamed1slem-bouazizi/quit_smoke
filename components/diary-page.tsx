@@ -293,9 +293,9 @@ export default function DiaryPage({ daysSinceQuit }: DiaryPageProps) {
       </div>
 
       {/* Today's Mood */}
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50">
+      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
+          <CardTitle className="text-lg flex items-center gap-2 text-gray-900 dark:text-gray-100">
             <Smile className="w-5 h-5 text-blue-600" />
             How are you feeling today?
           </CardTitle>
@@ -303,11 +303,11 @@ export default function DiaryPage({ daysSinceQuit }: DiaryPageProps) {
         <CardContent>
           <div className="space-y-4">
             {latestMood && (
-              <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
+              <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-600">
                 <span className="text-2xl">{latestMood.mood}</span>
                 <div>
-                  <p className="font-semibold">{latestMood.moodLabel}</p>
-                  <p className="text-sm text-gray-600">Current mood</p>
+                  <p className="font-semibold text-gray-900 dark:text-gray-100">{latestMood.moodLabel}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Current mood</p>
                 </div>
               </div>
             )}
@@ -320,12 +320,12 @@ export default function DiaryPage({ daysSinceQuit }: DiaryPageProps) {
                   className={`p-3 rounded-lg border transition-all hover:scale-105 ${
                     latestMood?.mood === mood.emoji
                       ? `${mood.color} border-current scale-105`
-                      : "bg-white border-gray-200 hover:bg-gray-50"
+                      : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
                   }`}
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-1">{mood.emoji}</div>
-                    <div className="text-xs font-medium">{mood.label}</div>
+                    <div className="text-xs font-medium text-gray-700 dark:text-gray-200">{mood.label}</div>
                   </div>
                 </button>
               ))}

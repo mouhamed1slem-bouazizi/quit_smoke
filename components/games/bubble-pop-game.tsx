@@ -60,11 +60,9 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
       timer = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev !== null && prev <= 1) {
-            // Time's up - check if target reached
             if (bubblesPopped >= targetBubbles) {
               completeLevel()
             } else {
-              // Failed to reach target - lose a life
               const newLives = lives - 1
               setLives(newLives)
               if (newLives <= 0) {
@@ -72,7 +70,6 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
                 cancelAnimationFrame(animationRef.current)
                 return null
               } else {
-                // Reset current level
                 generateLevel(level)
                 return timeLimit
               }
@@ -86,9 +83,7 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
     return () => clearInterval(timer)
   }, [timeLeft, gameState, lives, level, timeLimit, bubblesPopped, targetBubbles])
 
-  // Get difficulty settings based on level
   const getDifficultySettings = (currentLevel: number) => {
-    // Base settings
     let bubbleCount = 5 + Math.floor(currentLevel / 2)
     let timeLimit: number | null = null
     let minSize = 40
@@ -97,11 +92,9 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
     let maxSpeed = 60
     let bonusChance = 0.1
     let penaltyChance = 0
-    let targetPercentage = 0.7 // Need to pop 70% of bubbles to complete level
+    let targetPercentage = 0.7
 
-    // Adjust settings based on level
     if (currentLevel <= 10) {
-      // Beginner levels
       timeLimit = 30
       minSize = 40
       maxSize = 80
@@ -109,7 +102,6 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
       maxSpeed = 60
       penaltyChance = 0
     } else if (currentLevel <= 25) {
-      // Easy levels
       timeLimit = Math.max(20, 30 - Math.floor(currentLevel / 5))
       minSize = 35
       maxSize = 70
@@ -118,7 +110,6 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
       penaltyChance = 0.05
       targetPercentage = 0.75
     } else if (currentLevel <= 50) {
-      // Medium levels
       timeLimit = Math.max(15, 25 - Math.floor(currentLevel / 10))
       minSize = 30
       maxSize = 60
@@ -128,7 +119,6 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
       penaltyChance = 0.1
       targetPercentage = 0.8
     } else if (currentLevel <= 75) {
-      // Hard levels
       timeLimit = Math.max(10, 20 - Math.floor(currentLevel / 15))
       minSize = 25
       maxSize = 50
@@ -138,7 +128,6 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
       penaltyChance = 0.15
       targetPercentage = 0.85
     } else {
-      // Expert levels
       timeLimit = Math.max(8, 15 - Math.floor(currentLevel / 20))
       minSize = 20
       maxSize = 45
@@ -149,7 +138,6 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
       targetPercentage = 0.9
     }
 
-    // Cap bubble count to avoid overwhelming the screen
     bubbleCount = Math.min(bubbleCount, 30)
 
     return {
@@ -165,7 +153,6 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
     }
   }
 
-  // Start the game
   const startGame = () => {
     setLevel(1)
     setScore(0)
@@ -177,7 +164,6 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
     generateLevel(1)
   }
 
-  // Generate a new level
   const generateLevel = (currentLevel: number) => {
     const settings = getDifficultySettings(currentLevel)
     setTimeLimit(settings.timeLimit)
@@ -185,7 +171,6 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
 
     const newBubbles: Bubble[] = []
     for (let i = 0; i < settings.bubbleCount; i++) {
-      // Determine bubble type
       let type: "regular" | "bonus" | "penalty" = "regular"
       const rand = Math.random()
       if (rand < settings.penaltyChance) {
@@ -194,22 +179,20 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
         type = "bonus"
       }
 
-      // Set bubble properties based on type
-      let color = "#3b82f6" // Default blue for regular bubbles
+      let color = "#3b82f6"
       let points = 10
       let size = Math.random() * (settings.maxSize - settings.minSize) + settings.minSize
 
       if (type === "bonus") {
-        color = "#10b981" // Green for bonus
+        color = "#10b981"
         points = 25
-        size *= 0.8 // Smaller
+        size *= 0.8
       } else if (type === "penalty") {
-        color = "#ef4444" // Red for penalty
+        color = "#ef4444"
         points = -15
-        size *= 1.1 // Larger
+        size *= 1.1
       }
 
-      // Create bubble with random position
       newBubbles.push({
         id: i,
         x: Math.random() * (canvasSize.width - size),
@@ -230,7 +213,6 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
     setBubblesPopped(0)
     setGameState("playing")
 
-    // Start animation loop
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current)
     }
@@ -238,31 +220,26 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
     animationLoop(performance.now())
   }
 
-  // Animation loop for moving bubbles
   const animationLoop = (timestamp: number) => {
     if (gameState !== "playing") return
 
     const deltaTime = timestamp - lastTimeRef.current
     lastTimeRef.current = timestamp
 
-    // Update bubble positions
     setBubbles((prevBubbles) => {
       return prevBubbles.map((bubble) => {
         if (bubble.popped) return bubble
 
-        // Move bubble with circular motion
         const speedFactor = deltaTime / 1000
         const time = timestamp * 0.001
         let x = bubble.x + Math.cos(time + bubble.id) * bubble.speed * speedFactor * 0.5
         let y = bubble.y + Math.sin(time + bubble.id * 0.7) * bubble.speed * speedFactor * 0.5
 
-        // Keep bubbles within bounds
         if (x < 0) x = 0
         if (x > canvasSize.width - bubble.size) x = canvasSize.width - bubble.size
         if (y < 0) y = 0
         if (y > canvasSize.height - bubble.size) y = canvasSize.height - bubble.size
 
-        // Gradually reduce opacity (bubbles disappear over time)
         const opacityReduction = level <= 25 ? 0.3 : 0.5
         const opacity = Math.max(0, bubble.opacity - (opacityReduction * deltaTime) / 1000)
 
@@ -270,11 +247,9 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
       })
     })
 
-    // Continue animation loop
     animationRef.current = requestAnimationFrame(animationLoop)
   }
 
-  // Draw bubbles on canvas
   const drawBubbles = () => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -282,36 +257,41 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    // Clear canvas with background
-    ctx.fillStyle = "#dbeafe" // Light blue background
+    ctx.fillStyle = "rgba(59, 130, 246, 0.1)"
     ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-    // Draw each bubble
     bubbles.forEach((bubble) => {
       if (bubble.popped || bubble.opacity <= 0) return
 
       ctx.save()
       ctx.globalAlpha = bubble.opacity
 
-      // Draw bubble shadow
       ctx.beginPath()
       ctx.fillStyle = "rgba(0, 0, 0, 0.1)"
       ctx.arc(bubble.x + bubble.size / 2 + 2, bubble.y + bubble.size / 2 + 2, bubble.size / 2, 0, Math.PI * 2)
       ctx.fill()
 
-      // Draw main bubble
+      const gradient = ctx.createRadialGradient(
+        bubble.x + bubble.size / 2,
+        bubble.y + bubble.size / 2,
+        0,
+        bubble.x + bubble.size / 2,
+        bubble.y + bubble.size / 2,
+        bubble.size / 2,
+      )
+      gradient.addColorStop(0, bubble.color)
+      gradient.addColorStop(1, bubble.color + "80")
+
       ctx.beginPath()
-      ctx.fillStyle = bubble.color
+      ctx.fillStyle = gradient
       ctx.arc(bubble.x + bubble.size / 2, bubble.y + bubble.size / 2, bubble.size / 2, 0, Math.PI * 2)
       ctx.fill()
 
-      // Add shine effect
       ctx.beginPath()
       ctx.fillStyle = "rgba(255, 255, 255, 0.6)"
       ctx.arc(bubble.x + bubble.size * 0.3, bubble.y + bubble.size * 0.3, bubble.size * 0.15, 0, Math.PI * 2)
       ctx.fill()
 
-      // Add border
       ctx.beginPath()
       ctx.strokeStyle = "rgba(255, 255, 255, 0.8)"
       ctx.lineWidth = 2
@@ -322,7 +302,6 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
     })
   }
 
-  // Handle bubble click/tap
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (gameState !== "playing") return
 
@@ -333,21 +312,17 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
 
-    // Check if click hit any bubble
     let hit = false
     setBubbles((prevBubbles) => {
       return prevBubbles.map((bubble) => {
-        // Skip already popped bubbles
         if (bubble.popped) return bubble
 
-        // Check if click is inside bubble
         const dx = x - (bubble.x + bubble.size / 2)
         const dy = y - (bubble.y + bubble.size / 2)
         const distance = Math.sqrt(dx * dx + dy * dy)
 
         if (distance <= bubble.size / 2) {
           hit = true
-          // Update score and streak
           setScore((prev) => prev + bubble.points)
           if (bubble.type === "penalty") {
             setStreak(0)
@@ -358,7 +333,6 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
               return newStreak
             })
           }
-          // Count popped bubble
           setBubblesPopped((prev) => prev + 1)
           return { ...bubble, popped: true, opacity: 0 }
         }
@@ -366,42 +340,33 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
       })
     })
 
-    // If no bubble was hit, reset streak
     if (!hit) {
       setStreak(0)
     }
 
-    // Check if target reached
     if (bubblesPopped + (hit ? 1 : 0) >= targetBubbles) {
       completeLevel()
     }
   }
 
-  // Complete the current level
   const completeLevel = () => {
-    // Cancel animation
     cancelAnimationFrame(animationRef.current)
 
-    // Calculate bonuses
     const timeBonus = timeLeft ? timeLeft * 5 : 0
     const streakBonus = highestStreak * 10
     const accuracyBonus = Math.floor((bubblesPopped / totalBubbles) * 100)
     const totalBonus = timeBonus + streakBonus + accuracyBonus
 
-    // Update score
     setScore((prev) => prev + totalBonus)
 
-    // Show success message
     setSuccessMessage(
       `Level ${level} complete! +${totalBonus} points (Time: +${timeBonus}, Streak: +${streakBonus}, Accuracy: +${accuracyBonus})`,
     )
 
-    // Check if game completed
     if (level >= 100) {
       setGameState("success")
       onComplete()
     } else {
-      // Advance to next level after delay
       setTimeout(() => {
         setLevel((prev) => prev + 1)
         setSuccessMessage("")
@@ -410,7 +375,6 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
     }
   }
 
-  // Reset the game
   const resetGame = () => {
     cancelAnimationFrame(animationRef.current)
     setLevel(1)
@@ -425,7 +389,6 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
     setSuccessMessage("")
   }
 
-  // Get difficulty name based on level
   const getDifficultyName = () => {
     if (level <= 10) return "Beginner"
     if (level <= 25) return "Easy"
@@ -436,192 +399,204 @@ export default function BubblePopGame({ onComplete }: { onComplete: () => void }
 
   const isGameOver = lives <= 0 || (level > 100 && gameState === "success")
 
-  // Add canvas initialization effect
   useEffect(() => {
     if (gameState === "playing" && canvasRef.current) {
       const canvas = canvasRef.current
       const ctx = canvas.getContext("2d")
       if (ctx) {
-        // Set canvas size
         canvas.width = canvasSize.width
         canvas.height = canvasSize.height
-        // Initial draw
         drawBubbles()
       }
     }
   }, [gameState, canvasSize, bubbles])
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Bubble Pop</span>
-          <div className="flex gap-2">
-            <Badge variant="outline">Level: {level}/100</Badge>
-            <Badge variant="outline">Score: {score}</Badge>
-            <Button size="sm" variant="outline" onClick={resetGame}>
-              <RotateCcw className="w-4 h-4" />
-            </Button>
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {/* Game Info */}
-        <div className="grid grid-cols-4 gap-2 mb-4 text-center">
-          <div className="p-2 bg-gray-50 rounded">
-            <div className="text-xs text-gray-600">Difficulty</div>
-            <div className="font-semibold text-sm">{getDifficultyName()}</div>
-          </div>
-          <div className="p-2 bg-gray-50 rounded">
-            <div className="text-xs text-gray-600">Lives</div>
-            <div className="font-semibold text-sm">
-              {"❤️".repeat(lives)}
-              {"🤍".repeat(3 - lives)}
+    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-4">
+      <Card className="max-w-2xl mx-auto bg-white/10 backdrop-blur-md border-white/20 shadow-2xl">
+        <CardHeader className="bg-gradient-to-r from-blue-600/80 to-purple-600/80 text-white rounded-t-lg">
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                <span className="text-lg">🫧</span>
+              </div>
+              <span className="text-xl font-bold">Bubble Pop Master</span>
             </div>
-          </div>
-          <div className="p-2 bg-gray-50 rounded">
-            <div className="text-xs text-gray-600">Streak</div>
-            <div className="font-semibold text-sm">{streak}</div>
-          </div>
-          <div className="p-2 bg-gray-50 rounded">
-            <div className="text-xs text-gray-600">Progress</div>
-            <div className="font-semibold text-sm">
-              {bubblesPopped}/{targetBubbles}
+            <div className="flex gap-2">
+              <Badge className="bg-white/20 text-white border-white/30">Level: {level}/100</Badge>
+              <Badge className="bg-white/20 text-white border-white/30">Score: {score}</Badge>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={resetGame}
+                className="text-white hover:bg-white/20 transition-all duration-300 hover:scale-105"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </Button>
             </div>
-          </div>
-        </div>
-
-        {/* Timer */}
-        {timeLimit && timeLeft !== null && gameState === "playing" && (
-          <div className="mb-4">
-            <div className="flex justify-between text-sm mb-1">
-              <span>Time Remaining:</span>
-              <span className={`font-semibold ${timeLeft <= 5 ? "text-red-600" : "text-blue-600"}`}>{timeLeft}s</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          {/* Game Info */}
+          <div className="grid grid-cols-4 gap-3 mb-6">
+            {[
+              { label: "Difficulty", value: getDifficultyName(), icon: "🎯" },
+              { label: "Lives", value: "❤️".repeat(lives) + "🤍".repeat(3 - lives), icon: "" },
+              { label: "Streak", value: streak, icon: "🔥" },
+              { label: "Progress", value: `${bubblesPopped}/${targetBubbles}`, icon: "🎈" },
+            ].map((item, index) => (
               <div
-                className={`h-2 rounded-full transition-all duration-1000 ${
-                  timeLeft <= 5 ? "bg-red-500" : "bg-blue-500"
-                }`}
-                style={{ width: `${((timeLeft || 0) / timeLimit) * 100}%` }}
+                key={index}
+                className="bg-gradient-to-br from-white/60 to-blue-100/60 backdrop-blur-sm p-3 rounded-xl border border-white/30 text-center"
+              >
+                <div className="text-xs text-blue-700 font-medium">
+                  {item.icon} {item.label}
+                </div>
+                <div className="font-bold text-blue-900 text-sm mt-1">{item.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Timer */}
+          {timeLimit && timeLeft !== null && gameState === "playing" && (
+            <div className="mb-6 bg-gradient-to-r from-white/60 to-blue-100/60 backdrop-blur-sm p-4 rounded-xl border border-white/30">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-blue-700 font-medium">⏰ Time Remaining:</span>
+                <span className={`font-bold ${timeLeft <= 5 ? "text-red-600" : "text-blue-900"}`}>{timeLeft}s</span>
+              </div>
+              <div className="w-full bg-white/40 rounded-full h-3 overflow-hidden">
+                <div
+                  className={`h-3 rounded-full transition-all duration-1000 ${
+                    timeLeft <= 5
+                      ? "bg-gradient-to-r from-red-400 to-red-600"
+                      : "bg-gradient-to-r from-blue-400 to-purple-600"
+                  }`}
+                  style={{ width: `${((timeLeft || 0) / timeLimit) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Success Message */}
+          {successMessage && (
+            <div className="mb-6 p-4 bg-gradient-to-br from-green-100/80 to-emerald-100/80 backdrop-blur-sm rounded-xl border border-white/30 text-center">
+              <p className="text-green-700 font-bold">{successMessage}</p>
+            </div>
+          )}
+
+          {/* Game Over Screen */}
+          {isGameOver && (
+            <div className="text-center mb-6 p-6 bg-gradient-to-br from-purple-100/80 to-pink-100/80 backdrop-blur-sm rounded-xl border border-white/30">
+              {level > 100 ? (
+                <div>
+                  <div className="text-4xl mb-3">👑</div>
+                  <p className="text-purple-700 font-bold text-xl mb-2">BUBBLE MASTER!</p>
+                  <p className="text-purple-600 mb-2">You completed all 100 levels!</p>
+                  <p className="text-gray-600 text-sm">Final Score: {score} points</p>
+                </div>
+              ) : (
+                <div>
+                  <div className="text-3xl mb-3">💔</div>
+                  <p className="text-red-700 font-bold text-lg mb-2">Game Over!</p>
+                  <p className="text-red-600 mb-2">You reached level {level}</p>
+                  <p className="text-gray-600 text-sm">Score: {score} points</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Game Canvas */}
+          {gameState !== "waiting" && !isGameOver && (
+            <div className="mb-6">
+              <div
+                className="relative mx-auto bg-gradient-to-br from-white/40 to-blue-100/40 backdrop-blur-sm rounded-xl border border-white/30 shadow-lg overflow-hidden"
+                style={{ width: canvasSize.width, height: canvasSize.height }}
+              >
+                <canvas
+                  ref={canvasRef}
+                  width={canvasSize.width}
+                  height={canvasSize.height}
+                  onClick={handleCanvasClick}
+                  className="block cursor-pointer"
+                  style={{ width: "100%", height: "100%" }}
+                />
+
+                {/* Bubble Legend */}
+                <div className="absolute top-3 right-3 bg-white/80 backdrop-blur-sm p-3 rounded-lg text-xs shadow-lg border border-white/40">
+                  <div className="flex items-center mb-2">
+                    <div className="w-4 h-4 rounded-full bg-blue-500 mr-2 shadow-sm"></div>
+                    <span className="text-blue-700 font-medium">+10pts</span>
+                  </div>
+                  <div className="flex items-center mb-2">
+                    <div className="w-4 h-4 rounded-full bg-green-500 mr-2 shadow-sm"></div>
+                    <span className="text-green-700 font-medium">+25pts</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 rounded-full bg-red-500 mr-2 shadow-sm"></div>
+                    <span className="text-red-700 font-medium">-15pts</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Progress to Level 100 */}
+          <div className="space-y-3 mb-6">
+            <div className="flex justify-between text-sm text-blue-700 font-medium">
+              <span>🏆 Overall Progress:</span>
+              <span>{level}/100</span>
+            </div>
+            <div className="w-full bg-white/40 rounded-full h-3 overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-purple-400 to-pink-600 h-3 rounded-full transition-all duration-500"
+                style={{ width: `${(level / 100) * 100}%` }}
               />
             </div>
           </div>
-        )}
 
-        {/* Success Message */}
-        {successMessage && (
-          <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-200 text-center">
-            <p className="text-green-700 font-semibold">{successMessage}</p>
-          </div>
-        )}
-
-        {/* Game Over Screen */}
-        {isGameOver && (
-          <div className="text-center mb-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border-2 border-purple-200">
-            {level > 100 ? (
-              <div>
-                <div className="text-3xl mb-2">👑</div>
-                <p className="text-purple-700 font-bold text-lg">BUBBLE MASTER!</p>
-                <p className="text-sm text-purple-600">You completed all 100 levels!</p>
-                <p className="text-xs text-gray-600 mt-2">Final Score: {score} points</p>
+          {/* Start Button */}
+          {gameState === "waiting" && (
+            <div className="space-y-6">
+              <div className="p-6 bg-gradient-to-br from-blue-100/80 to-purple-100/80 backdrop-blur-sm rounded-xl border border-white/30 text-center">
+                <h3 className="font-bold text-blue-700 mb-3 text-lg">🎮 How to Play:</h3>
+                <p className="text-blue-600 mb-4">
+                  Pop as many bubbles as you can before they fade away! Watch out for special bubbles:
+                </p>
+                <div className="flex justify-center gap-6 text-sm">
+                  <div className="flex items-center">
+                    <span className="inline-block w-4 h-4 rounded-full bg-blue-500 mr-2 shadow-sm"></span>
+                    <span className="text-blue-700 font-medium">Regular: +10pts</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="inline-block w-4 h-4 rounded-full bg-green-500 mr-2 shadow-sm"></span>
+                    <span className="text-green-700 font-medium">Bonus: +25pts</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="inline-block w-4 h-4 rounded-full bg-red-500 mr-2 shadow-sm"></span>
+                    <span className="text-red-700 font-medium">Penalty: -15pts</span>
+                  </div>
+                </div>
               </div>
-            ) : (
-              <div>
-                <div className="text-2xl mb-2">💔</div>
-                <p className="text-red-700 font-semibold">Game Over!</p>
-                <p className="text-sm text-red-600">You reached level {level}</p>
-                <p className="text-xs text-gray-600 mt-2">Score: {score} points</p>
-              </div>
-            )}
-          </div>
-        )}
 
-        {/* Game Canvas */}
-        {gameState !== "waiting" && !isGameOver && (
-          <div className="mb-4">
-            <div
-              className="relative mx-auto border border-gray-300 rounded-lg overflow-hidden"
-              style={{ width: canvasSize.width, height: canvasSize.height }}
+              <Button
+                onClick={startGame}
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all duration-300 hover:scale-105"
+              >
+                🚀 Start Bubble Challenge (100 Levels)
+              </Button>
+            </div>
+          )}
+
+          {isGameOver && (
+            <Button
+              onClick={startGame}
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-3 rounded-xl shadow-lg transition-all duration-300 hover:scale-105"
             >
-              <canvas
-                ref={canvasRef}
-                width={canvasSize.width}
-                height={canvasSize.height}
-                onClick={handleCanvasClick}
-                className="block cursor-pointer"
-                style={{ width: "100%", height: "100%" }}
-              />
-
-              {/* Bubble Legend */}
-              <div className="absolute top-2 right-2 bg-white bg-opacity-90 p-2 rounded text-xs shadow-sm">
-                <div className="flex items-center mb-1">
-                  <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-                  <span>+10pts</span>
-                </div>
-                <div className="flex items-center mb-1">
-                  <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                  <span>+25pts</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                  <span>-15pts</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Progress to Level 100 */}
-        <div className="space-y-2 mt-4">
-          <div className="flex justify-between text-sm">
-            <span>Overall Progress:</span>
-            <span>{level}/100</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(level / 100) * 100}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Start Button */}
-        {gameState === "waiting" && (
-          <div className="mt-4 space-y-4">
-            <div className="p-4 bg-blue-50 rounded-lg text-center">
-              <h3 className="font-semibold mb-2">How to Play:</h3>
-              <p className="text-sm text-gray-700 mb-2">
-                Pop as many bubbles as you can before they fade away! Watch out for special bubbles:
-              </p>
-              <div className="flex justify-center gap-4 text-sm">
-                <div>
-                  <span className="inline-block w-3 h-3 rounded-full bg-blue-500 mr-1"></span>
-                  Regular: +10pts
-                </div>
-                <div>
-                  <span className="inline-block w-3 h-3 rounded-full bg-green-500 mr-1"></span>
-                  Bonus: +25pts
-                </div>
-                <div>
-                  <span className="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span>
-                  Penalty: -15pts
-                </div>
-              </div>
-            </div>
-
-            <Button onClick={startGame} className="w-full">
-              Start Bubble Challenge (100 Levels)
+              {level > 100 ? "🎮 Play Again" : "🔄 Try Again"}
             </Button>
-          </div>
-        )}
-
-        {isGameOver && (
-          <Button onClick={startGame} className="w-full mt-4">
-            {level > 100 ? "Play Again" : "Try Again"}
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   )
 }

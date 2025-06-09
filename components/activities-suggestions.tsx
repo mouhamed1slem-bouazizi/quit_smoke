@@ -173,9 +173,9 @@ export default function ActivitiesSuggestions() {
       </Card>
 
       {/* AI Generated Suggestion */}
-      <Card className="bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-200">
+      <Card className="bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-gray-800 dark:to-gray-700 border-orange-200 dark:border-gray-600">
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-base flex items-center gap-2 dark:text-gray-100">
             <span className="text-lg">🤖</span>
             AI Suggestion
           </CardTitle>
@@ -184,10 +184,10 @@ export default function ActivitiesSuggestions() {
           {isLoading ? (
             <div className="flex items-center justify-center py-4">
               <RefreshCw className="w-5 h-5 animate-spin text-orange-600" />
-              <span className="ml-2 text-gray-600">Generating suggestion...</span>
+              <span className="ml-2 text-gray-600 dark:text-gray-300">Generating suggestion...</span>
             </div>
           ) : (
-            <p className="text-gray-700 leading-relaxed">{aiSuggestion}</p>
+            <p className="text-gray-700 dark:text-gray-200 leading-relaxed">{aiSuggestion}</p>
           )}
         </CardContent>
       </Card>

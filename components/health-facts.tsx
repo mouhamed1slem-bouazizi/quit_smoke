@@ -102,27 +102,27 @@ export default function HealthFacts({ daysSinceQuit }: HealthFactsProps) {
     const categoryData = {
       immediate: {
         title: "Immediate Benefits",
-        icon: <Zap className="w-5 h-5 text-yellow-500" />,
-        color: "from-yellow-50 to-orange-50",
-        borderColor: "border-yellow-200",
+        icon: <Zap className="w-5 h-5 text-yellow-500 dark:text-yellow-400" />,
+        color: "from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20",
+        borderColor: "border-yellow-200 dark:border-yellow-700",
       },
       short: {
         title: "Short-term Benefits",
-        icon: <TrendingUp className="w-5 h-5 text-blue-500" />,
-        color: "from-blue-50 to-cyan-50",
-        borderColor: "border-blue-200",
+        icon: <TrendingUp className="w-5 h-5 text-blue-500 dark:text-blue-400" />,
+        color: "from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20",
+        borderColor: "border-blue-200 dark:border-blue-700",
       },
       long: {
         title: "Long-term Benefits",
-        icon: <Shield className="w-5 h-5 text-green-500" />,
-        color: "from-green-50 to-emerald-50",
-        borderColor: "border-green-200",
+        icon: <Shield className="w-5 h-5 text-green-500 dark:text-green-400" />,
+        color: "from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20",
+        borderColor: "border-green-200 dark:border-green-700",
       },
       benefits: {
         title: "Overall Benefits",
-        icon: <Heart className="w-5 h-5 text-red-500" />,
-        color: "from-red-50 to-pink-50",
-        borderColor: "border-red-200",
+        icon: <Heart className="w-5 h-5 text-red-500 dark:text-red-400" />,
+        color: "from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20",
+        borderColor: "border-red-200 dark:border-red-700",
       },
     }
     return categoryData[category as keyof typeof categoryData]
@@ -133,7 +133,7 @@ export default function HealthFacts({ daysSinceQuit }: HealthFactsProps) {
   return (
     <Card className={`bg-gradient-to-r ${currentCategoryInfo.color} ${currentCategoryInfo.borderColor}`}>
       <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
+        <CardTitle className="text-lg flex items-center gap-2 text-gray-800 dark:text-gray-200">
           {currentCategoryInfo.icon}
           Health Insight: {currentCategoryInfo.title}
         </CardTitle>
@@ -181,16 +181,16 @@ export default function HealthFacts({ daysSinceQuit }: HealthFactsProps) {
           </div>
 
           {/* Health Fact Display */}
-          <div className="bg-white p-4 rounded-lg shadow-sm">
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
             {isLoading ? (
               <div className="flex items-center justify-center py-4">
-                <RefreshCw className="w-5 h-5 animate-spin text-gray-500" />
-                <span className="ml-2 text-gray-600">Generating health insight...</span>
+                <RefreshCw className="w-5 h-5 animate-spin text-gray-500 dark:text-gray-400" />
+                <span className="ml-2 text-gray-600 dark:text-gray-300">Generating health insight...</span>
               </div>
             ) : (
               <div>
-                <p className="text-gray-700 leading-relaxed mb-3">{healthFact}</p>
-                <div className="flex items-center justify-between text-xs text-gray-500">
+                <p className="text-gray-700 dark:text-gray-200 leading-relaxed mb-3">{healthFact}</p>
+                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                   <span>Day {daysSinceQuit} of your smoke-free journey</span>
                   <span className="flex items-center gap-1">
                     <Heart className="w-3 h-3 text-red-400" />
@@ -227,9 +227,9 @@ export default function HealthFacts({ daysSinceQuit }: HealthFactsProps) {
 
           {/* Progress Indicator */}
           <div className="text-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white rounded-full text-xs">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white dark:bg-gray-800 rounded-full text-xs border border-gray-200 dark:border-gray-700">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-gray-600">Your body is healing every day</span>
+              <span className="text-gray-600 dark:text-gray-300">Your body is healing every day</span>
             </div>
           </div>
         </div>

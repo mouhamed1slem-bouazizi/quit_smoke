@@ -7,9 +7,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User, Calendar, Edit3, Camera, Trophy, Heart, Cigarette, Save, X, LogOut } from "lucide-react"
+import {
+  User,
+  Calendar,
+  Edit3,
+  Camera,
+  Trophy,
+  Heart,
+  Cigarette,
+  Save,
+  X,
+  LogOut,
+  Monitor,
+  Moon,
+  Sun,
+} from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
+import { useTheme } from "@/contexts/theme-context"
 
 interface ProfilePageProps {
   daysSinceQuit: number
@@ -31,6 +46,8 @@ export default function ProfilePage({ daysSinceQuit }: ProfilePageProps) {
       ? new Date(userData.quitDate).toISOString().split("T")[0]
       : new Date().toISOString().split("T")[0],
   })
+
+  const { theme, setTheme } = useTheme()
 
   if (!userData) {
     return <div>Loading user data...</div>
@@ -412,6 +429,88 @@ export default function ProfilePage({ daysSinceQuit }: ProfilePageProps) {
             <p className="text-sm text-gray-600">
               Your body is healing and getting stronger every day. Keep up the amazing work!
             </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Theme Settings */}
+      <Card className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-800/50 dark:to-gray-800/50 dark:border-slate-700/50">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Monitor className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            Appearance
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+              Choose how the app looks to you. Select a single theme, or sync with your system and automatically switch
+              between day and night themes.
+            </p>
+
+            <div className="grid grid-cols-3 gap-3">
+              <button
+                onClick={() => setTheme("light")}
+                className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all hover:scale-105 ${
+                  theme === "light"
+                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 dark:border-blue-400 shadow-lg"
+                    : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800/50"
+                }`}
+              >
+                <Sun
+                  className={`w-6 h-6 ${theme === "light" ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"}`}
+                />
+                <span
+                  className={`text-sm font-medium ${theme === "light" ? "text-blue-600 dark:text-blue-400" : "text-gray-700 dark:text-gray-300"}`}
+                >
+                  Light
+                </span>
+              </button>
+
+              <button
+                onClick={() => setTheme("dark")}
+                className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all hover:scale-105 ${
+                  theme === "dark"
+                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 dark:border-blue-400 shadow-lg"
+                    : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800/50"
+                }`}
+              >
+                <Moon
+                  className={`w-6 h-6 ${theme === "dark" ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"}`}
+                />
+                <span
+                  className={`text-sm font-medium ${theme === "dark" ? "text-blue-600 dark:text-blue-400" : "text-gray-700 dark:text-gray-300"}`}
+                >
+                  Dark
+                </span>
+              </button>
+
+              <button
+                onClick={() => setTheme("system")}
+                className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all hover:scale-105 ${
+                  theme === "system"
+                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 dark:border-blue-400 shadow-lg"
+                    : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800/50"
+                }`}
+              >
+                <Monitor
+                  className={`w-6 h-6 ${theme === "system" ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"}`}
+                />
+                <span
+                  className={`text-sm font-medium ${theme === "system" ? "text-blue-600 dark:text-blue-400" : "text-gray-700 dark:text-gray-300"}`}
+                >
+                  System
+                </span>
+              </button>
+            </div>
+
+            {theme === "system" && (
+              <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/30 dark:border-blue-800/30 rounded-lg border dark:border">
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  🌓 Automatically switches between light and dark themes based on your device settings
+                </p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

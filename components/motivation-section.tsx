@@ -44,23 +44,23 @@ export default function MotivationSection({ daysSinceQuit }: MotivationSectionPr
   }
 
   return (
-    <Card className="bg-gradient-to-r from-purple-50 to-pink-50">
+    <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-700">
       <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <MessageCircle className="w-5 h-5 text-purple-600" />
+        <CardTitle className="text-lg flex items-center gap-2 text-purple-800 dark:text-purple-200">
+          <MessageCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
           Daily Motivation
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="bg-white p-4 rounded-lg shadow-sm">
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-purple-100 dark:border-purple-700">
             {isLoading ? (
               <div className="flex items-center justify-center py-4">
-                <RefreshCw className="w-5 h-5 animate-spin text-purple-600" />
-                <span className="ml-2 text-gray-600">Generating your message...</span>
+                <RefreshCw className="w-5 h-5 animate-spin text-purple-600 dark:text-purple-400" />
+                <span className="ml-2 text-gray-600 dark:text-gray-300">Generating your message...</span>
               </div>
             ) : (
-              <p className="text-gray-700 leading-relaxed">{motivationMessage}</p>
+              <p className="text-gray-700 dark:text-gray-200 leading-relaxed">{motivationMessage}</p>
             )}
           </div>
 
@@ -68,7 +68,7 @@ export default function MotivationSection({ daysSinceQuit }: MotivationSectionPr
             onClick={generateMotivationMessage}
             variant="outline"
             size="sm"
-            className="w-full"
+            className="w-full border-purple-200 dark:border-purple-600 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30"
             disabled={isLoading}
           >
             <RefreshCw className="w-4 h-4 mr-2" />

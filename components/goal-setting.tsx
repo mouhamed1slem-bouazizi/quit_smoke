@@ -398,14 +398,16 @@ export default function GoalSetting({ daysSinceQuit }: GoalSettingProps) {
 
                       {/* User Reaction and Comment */}
                       {(goal.userReaction || goal.userComment) && (
-                        <div className="p-3 bg-white rounded-lg border">
+                        <div className="p-3 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-600">
                           {goal.userReaction && (
                             <div className="flex items-center gap-2 mb-2">
                               <span className="text-lg">{goal.userReaction}</span>
-                              <span className="text-sm text-gray-600">Your reaction</span>
+                              <span className="text-sm text-gray-600 dark:text-gray-300">Your reaction</span>
                             </div>
                           )}
-                          {goal.userComment && <p className="text-sm text-gray-700 italic">"{goal.userComment}"</p>}
+                          {goal.userComment && (
+                            <p className="text-sm text-gray-700 dark:text-gray-200 italic">"{goal.userComment}"</p>
+                          )}
                         </div>
                       )}
 
@@ -432,13 +434,13 @@ export default function GoalSetting({ daysSinceQuit }: GoalSettingProps) {
 
       {/* Reaction Modal */}
       {selectedGoal && (
-        <Card className="fixed inset-4 z-50 bg-white shadow-lg max-h-96 overflow-y-auto">
+        <Card className="fixed inset-4 z-50 bg-white dark:bg-gray-800 shadow-lg max-h-96 overflow-y-auto border dark:border-gray-600">
           <CardHeader>
-            <CardTitle className="text-lg">Celebrate: {selectedGoal.title}</CardTitle>
+            <CardTitle className="text-lg dark:text-gray-100">Celebrate: {selectedGoal.title}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Choose your reaction:</label>
+              <label className="block text-sm font-medium mb-2 dark:text-gray-200">Choose your reaction:</label>
               <div className="grid grid-cols-5 gap-2">
                 {reactions.map((reaction) => (
                   <button
@@ -446,8 +448,8 @@ export default function GoalSetting({ daysSinceQuit }: GoalSettingProps) {
                     onClick={() => setSelectedReaction(reaction)}
                     className={`p-3 text-2xl rounded-lg border transition-all ${
                       selectedReaction === reaction
-                        ? "bg-blue-100 border-blue-500 scale-110"
-                        : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                        ? "bg-blue-100 dark:bg-blue-900 border-blue-500 dark:border-blue-400 scale-110"
+                        : "bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
                     }`}
                   >
                     {reaction}
@@ -457,12 +459,13 @@ export default function GoalSetting({ daysSinceQuit }: GoalSettingProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Add a personal note:</label>
+              <label className="block text-sm font-medium mb-2 dark:text-gray-200">Add a personal note:</label>
               <Textarea
                 placeholder="How do you feel about achieving this goal? Share your thoughts..."
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 rows={3}
+                className="dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 dark:placeholder-gray-400"
               />
             </div>
 
@@ -481,7 +484,7 @@ export default function GoalSetting({ daysSinceQuit }: GoalSettingProps) {
                   setSelectedReaction("")
                 }}
                 variant="outline"
-                className="flex-1"
+                className="flex-1 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
               >
                 Cancel
               </Button>

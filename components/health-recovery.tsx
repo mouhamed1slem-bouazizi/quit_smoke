@@ -705,38 +705,44 @@ export default function HealthRecovery({ daysSinceQuit }: HealthRecoveryProps) {
   return (
     <div className="space-y-6">
       {/* Header with Next Milestone */}
-      <Card className="bg-gradient-to-r from-blue-50 to-green-50">
+      <Card className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 dark:border-gray-700">
         <CardHeader>
-          <CardTitle className="text-xl flex items-center gap-2">
-            <Activity className="w-6 h-6 text-blue-600" />
+          <CardTitle className="text-xl flex items-center gap-2 dark:text-blue-200">
+            <Activity className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             Your Health Recovery
           </CardTitle>
         </CardHeader>
         <CardContent>
           {nextMilestone ? (
             <div className="text-center">
-              <h3 className="text-lg font-semibold text-blue-800 mb-2">Next milestone: {nextMilestone.title}</h3>
+              <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-300 mb-2">
+                Next milestone: {nextMilestone.title}
+              </h3>
               <div className="flex items-center justify-center gap-2 mb-3">
-                <Clock className="w-4 h-4 text-blue-600" />
-                <span className="text-blue-600">
+                <Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-blue-600 dark:text-blue-400">
                   in {Math.max(0, Math.ceil(nextMilestone.day - daysSinceQuit))} days
                 </span>
               </div>
-              <p className="text-sm text-gray-600">{nextMilestone.description}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{nextMilestone.description}</p>
             </div>
           ) : (
             <div className="text-center">
-              <h3 className="text-lg font-semibold text-green-800 mb-2">🎉 All major milestones achieved!</h3>
-              <p className="text-sm text-gray-600">Your body has made incredible progress in its recovery journey.</p>
+              <h3 className="text-lg font-semibold text-green-800 dark:text-green-300 mb-2">
+                🎉 All major milestones achieved!
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Your body has made incredible progress in its recovery journey.
+              </p>
             </div>
           )}
         </CardContent>
       </Card>
 
       {/* Body Systems Tabs */}
-      <Card>
+      <Card className="dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
-          <CardTitle className="text-lg">Body Systems Recovery</CardTitle>
+          <CardTitle className="text-lg dark:text-gray-200">Body Systems Recovery</CardTitle>
         </CardHeader>
         <CardContent>
           <Tabs value={selectedSystem} onValueChange={setSelectedSystem}>
@@ -780,11 +786,13 @@ export default function HealthRecovery({ daysSinceQuit }: HealthRecoveryProps) {
             {bodySystems.map((system) => (
               <TabsContent key={system.id} value={system.id} className="space-y-4">
                 {/* System Overview */}
-                <div className={`p-4 rounded-lg ${system.bgColor}`}>
+                <div
+                  className={`p-4 rounded-lg ${system.bgColor} dark:bg-gray-800/50 dark:border dark:border-gray-600`}
+                >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <div className={system.color}>{system.icon}</div>
-                      <h3 className="font-semibold">{system.name}</h3>
+                      <h3 className="font-semibold dark:text-gray-200">{system.name}</h3>
                     </div>
                     <Badge variant="secondary">
                       {completedMilestones}/{system.milestones.length} milestones
@@ -792,18 +800,20 @@ export default function HealthRecovery({ daysSinceQuit }: HealthRecoveryProps) {
                   </div>
 
                   <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-sm dark:text-gray-300">
                       <span>Healing Progress</span>
                       <span className="font-semibold">{progressPercentage.toFixed(0)}%</span>
                     </div>
                     <Progress value={progressPercentage} className="h-3" />
-                    {nextMilestone && <p className="text-sm text-gray-600 mt-2">{nextMilestone.details}</p>}
+                    {nextMilestone && (
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">{nextMilestone.details}</p>
+                    )}
                   </div>
                 </div>
 
                 {/* Recovery Timeline */}
                 <div>
-                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 dark:text-gray-200">
                     <TrendingUp className="w-4 h-4" />
                     Recovery Timeline
                   </h4>
@@ -813,10 +823,10 @@ export default function HealthRecovery({ daysSinceQuit }: HealthRecoveryProps) {
                         key={index}
                         className={`p-3 rounded-lg border transition-all ${
                           milestone.completed
-                            ? "bg-green-50 border-green-200"
+                            ? "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-700"
                             : milestone === nextMilestone
-                              ? "bg-blue-50 border-blue-200"
-                              : "bg-gray-50 border-gray-200"
+                              ? "bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-700"
+                              : "bg-gray-50 border-gray-200 dark:bg-gray-800/50 dark:border-gray-600"
                         }`}
                       >
                         <div className="flex items-start gap-3">
@@ -829,10 +839,10 @@ export default function HealthRecovery({ daysSinceQuit }: HealthRecoveryProps) {
                             <h5
                               className={`font-semibold ${
                                 milestone.completed
-                                  ? "text-green-700"
+                                  ? "text-green-700 dark:text-green-300"
                                   : milestone === nextMilestone
-                                    ? "text-blue-700"
-                                    : "text-gray-600"
+                                    ? "text-blue-700 dark:text-blue-300"
+                                    : "text-gray-600 dark:text-gray-300"
                               }`}
                             >
                               {milestone.title}
@@ -840,15 +850,15 @@ export default function HealthRecovery({ daysSinceQuit }: HealthRecoveryProps) {
                             <p
                               className={`text-sm ${
                                 milestone.completed
-                                  ? "text-green-600"
+                                  ? "text-green-600 dark:text-green-400"
                                   : milestone === nextMilestone
-                                    ? "text-blue-600"
-                                    : "text-gray-500"
+                                    ? "text-blue-600 dark:text-blue-400"
+                                    : "text-gray-500 dark:text-gray-400"
                               }`}
                             >
                               {milestone.description}
                             </p>
-                            <p className="text-xs text-gray-600 mt-1">{milestone.details}</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{milestone.details}</p>
                           </div>
                           {milestone.completed && (
                             <div className="text-green-600">
@@ -867,24 +877,24 @@ export default function HealthRecovery({ daysSinceQuit }: HealthRecoveryProps) {
       </Card>
 
       {/* Body Healing Visualization */}
-      <Card>
+      <Card className="dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
+          <CardTitle className="text-lg flex items-center gap-2 dark:text-gray-200">
             <div className={currentSystem.color}>{currentSystem.icon}</div>
             Body Healing Visualization
           </CardTitle>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
             Visualization of your <span className="font-semibold">{currentSystem.name.toLowerCase()}</span> after{" "}
-            <span className="font-semibold text-blue-600">{daysSinceQuit}</span> days without smoking
+            <span className="font-semibold text-blue-600 dark:text-blue-400">{daysSinceQuit}</span> days without smoking
           </p>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {isLoadingImage ? (
-              <div className="flex items-center justify-center h-48 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-center h-48 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div className="text-center">
                   <RefreshCw className="w-8 h-8 animate-spin text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
                     Generating {currentSystem.name.toLowerCase()} visualization...
                   </p>
                 </div>
@@ -917,11 +927,18 @@ export default function HealthRecovery({ daysSinceQuit }: HealthRecoveryProps) {
               Generate New {currentSystem.name} Visualization
             </Button>
 
-            <div className={`text-center p-3 rounded-lg ${currentSystem.bgColor}`}>
-              <p className="text-sm text-gray-700">
-                Your <span className={`font-semibold ${currentSystem.color}`}>{currentSystem.name.toLowerCase()}</span>{" "}
-                has completed <span className="font-semibold text-blue-600">{completedMilestones}</span> out of{" "}
-                <span className="font-semibold">{currentSystem.milestones.length}</span> major healing milestones!
+            <div
+              className={`text-center p-3 rounded-lg ${currentSystem.bgColor} dark:bg-gray-800/50 dark:border dark:border-gray-600`}
+            >
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                Your{" "}
+                <span className={`font-semibold ${currentSystem.color} dark:text-gray-200`}>
+                  {currentSystem.name.toLowerCase()}
+                </span>{" "}
+                has completed{" "}
+                <span className="font-semibold text-blue-600 dark:text-blue-400">{completedMilestones}</span> out of{" "}
+                <span className="font-semibold dark:text-gray-200">{currentSystem.milestones.length}</span> major
+                healing milestones!
               </p>
             </div>
           </div>

@@ -478,8 +478,8 @@ export default function CravingPage({ daysSinceQuit }: CravingPageProps) {
 
       {/* Current Craving Tracker */}
       {isRecording && (
-        <Card className="bg-gradient-to-r from-red-50 to-orange-50 border-red-200">
-          <CardContent className="p-4">
+        <Card className="bg-gradient-to-r from-red-50 to-orange-50 border-red-200 dark:bg-gray-800 dark:border-gray-700">
+          <CardContent className="p-4 dark:text-gray-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-red-100 rounded-full">
@@ -496,9 +496,9 @@ export default function CravingPage({ daysSinceQuit }: CravingPageProps) {
       )}
 
       {/* Intensity Selector - Exact match to image */}
-      <Card>
-        <CardContent className="p-6">
-          <h2 className="text-lg font-semibold mb-4">How strong is your craving?</h2>
+      <Card className="dark:bg-gray-800 dark:border-gray-700">
+        <CardContent className="p-6 dark:text-gray-200">
+          <h2 className="text-lg font-semibold mb-4 dark:text-gray-100">How strong is your craving?</h2>
 
           <div className="grid grid-cols-5 gap-2 mb-6">
             {intensityLevels.map((level) => (
@@ -507,14 +507,14 @@ export default function CravingPage({ daysSinceQuit }: CravingPageProps) {
                 onClick={() => setSelectedIntensity(level.level)}
                 className={`p-4 rounded-lg border-2 transition-all text-center ${
                   selectedIntensity === level.level
-                    ? `${level.bgColor} ${level.borderColor} scale-105`
-                    : "bg-white border-gray-200 hover:bg-gray-50"
+                    ? `${level.bgColor} ${level.borderColor} scale-105 dark:bg-gray-700 dark:border-gray-500`
+                    : "bg-white border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700"
                 }`}
               >
                 <div className={`text-2xl mb-2 ${level.color}`}>
                   <Flame className="w-6 h-6 mx-auto" />
                 </div>
-                <div className="text-xs font-medium">{level.label}</div>
+                <div className="text-xs font-medium dark:text-gray-200">{level.label}</div>
               </button>
             ))}
           </div>
@@ -522,7 +522,7 @@ export default function CravingPage({ daysSinceQuit }: CravingPageProps) {
           <Button
             onClick={recordCraving}
             disabled={selectedIntensity === null}
-            className="w-full bg-gray-400 hover:bg-gray-500 text-white"
+            className="w-full bg-gray-400 hover:bg-gray-500 text-white dark:bg-gray-600 dark:hover:bg-gray-500"
             size="lg"
           >
             Record Craving
@@ -531,10 +531,10 @@ export default function CravingPage({ daysSinceQuit }: CravingPageProps) {
       </Card>
 
       {/* Activities Section - AI Generated Daily */}
-      <Card>
-        <CardContent className="p-6">
+      <Card className="dark:bg-gray-800 dark:border-gray-700">
+        <CardContent className="p-6 dark:text-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Try These Activities</h2>
+            <h2 className="text-lg font-semibold dark:text-gray-100">Try These Activities</h2>
             <Button variant="ghost" size="sm" onClick={generateDailyActivities} disabled={isLoadingActivities}>
               <RefreshCw className={`w-4 h-4 ${isLoadingActivities ? "animate-spin" : ""}`} />
             </Button>
@@ -561,7 +561,9 @@ export default function CravingPage({ daysSinceQuit }: CravingPageProps) {
                   <div
                     key={activity.id}
                     className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
-                      isCompleted ? "bg-green-50 border-green-200" : "bg-white"
+                      isCompleted
+                        ? "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-700"
+                        : "bg-white dark:bg-gray-800 dark:border-gray-700"
                     }`}
                     onClick={() => !isCompleted && openActivityModal(activity)}
                   >
@@ -574,10 +576,12 @@ export default function CravingPage({ daysSinceQuit }: CravingPageProps) {
                       />
                     </div>
                     <div className="flex-1">
-                      <h3 className={`font-semibold ${isCompleted ? "text-green-700" : "text-gray-800"}`}>
+                      <h3
+                        className={`font-semibold ${isCompleted ? "text-green-700 dark:text-green-300" : "text-gray-800 dark:text-gray-200"}`}
+                      >
                         {activity.title}
                       </h3>
-                      <p className="text-sm text-gray-600">{activity.duration}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{activity.duration}</p>
                     </div>
                     {isCompleted ? (
                       <CheckCircle className="w-5 h-5 text-green-600" />
@@ -601,22 +605,22 @@ export default function CravingPage({ daysSinceQuit }: CravingPageProps) {
 
       {/* Today's Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <CardContent className="p-4 text-center dark:text-gray-200">
             <div className="text-2xl font-bold text-blue-600">{todayCravings.length}</div>
             <div className="text-sm text-gray-600">Today's Cravings</div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4 text-center">
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <CardContent className="p-4 text-center dark:text-gray-200">
             <div className="text-2xl font-bold text-orange-600">{averageIntensity || "—"}</div>
             <div className="text-sm text-gray-600">Avg Intensity</div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4 text-center">
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <CardContent className="p-4 text-center dark:text-gray-200">
             <div className="text-sm font-bold text-green-600">{lastCravingTime || "None today"}</div>
             <div className="text-sm text-gray-600">Last Craving</div>
           </CardContent>
@@ -625,14 +629,14 @@ export default function CravingPage({ daysSinceQuit }: CravingPageProps) {
 
       {/* Recent Cravings */}
       {todayCravings.length > 0 && (
-        <Card>
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
+            <CardTitle className="text-lg flex items-center gap-2 dark:text-gray-100">
               <BarChart3 className="w-5 h-5 text-purple-600" />
               Today's Craving History
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="dark:text-gray-200">
             <div className="space-y-3">
               {todayCravings
                 .sort((a, b) => b.timestamp - a.timestamp)
@@ -669,10 +673,10 @@ export default function CravingPage({ daysSinceQuit }: CravingPageProps) {
       {/* Activity Detail Modal */}
       {showActivityModal && selectedActivity && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="text-lg flex items-center gap-2 dark:text-gray-100">
                   {selectedActivity.icon}
                   {selectedActivity.title}
                 </CardTitle>
@@ -681,13 +685,13 @@ export default function CravingPage({ daysSinceQuit }: CravingPageProps) {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 dark:text-gray-200">
               <div className={`p-4 rounded-lg ${selectedActivity.color}`}>
                 <p className="text-gray-700">{selectedActivity.description}</p>
               </div>
 
               <div>
-                <h3 className="font-semibold mb-2">Instructions:</h3>
+                <h3 className="font-semibold mb-2 dark:text-gray-100">Instructions:</h3>
                 <ol className="space-y-2">
                   {selectedActivity.instructions.map((instruction, index) => (
                     <li key={index} className="flex gap-3">
@@ -701,7 +705,7 @@ export default function CravingPage({ daysSinceQuit }: CravingPageProps) {
               </div>
 
               <div>
-                <h3 className="font-semibold mb-2">Benefits:</h3>
+                <h3 className="font-semibold mb-2 dark:text-gray-100">Benefits:</h3>
                 <div className="flex flex-wrap gap-2">
                   {selectedActivity.benefits.map((benefit, index) => (
                     <Badge key={index} variant="secondary" className="text-xs">
@@ -734,8 +738,8 @@ export default function CravingPage({ daysSinceQuit }: CravingPageProps) {
       )}
 
       {/* Motivational Message */}
-      <Card className="bg-gradient-to-r from-green-50 to-blue-50">
-        <CardContent className="p-4 text-center">
+      <Card className="bg-gradient-to-r from-green-50 to-blue-50 dark:bg-gray-800 dark:border-gray-700">
+        <CardContent className="p-4 text-center dark:text-gray-200">
           <TrendingDown className="w-8 h-8 text-green-500 mx-auto mb-2" />
           <h3 className="font-semibold text-gray-800 mb-2">Remember: Cravings Pass</h3>
           <p className="text-sm text-gray-600">
@@ -747,8 +751,8 @@ export default function CravingPage({ daysSinceQuit }: CravingPageProps) {
       {/* Completion Message */}
       {showCompletionMessage && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-sm">
-            <CardContent className="p-6 text-center">
+          <Card className="w-full max-w-sm dark:bg-gray-800 dark:border-gray-700">
+            <CardContent className="p-6 text-center dark:text-gray-200">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>

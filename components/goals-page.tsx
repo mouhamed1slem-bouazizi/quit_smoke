@@ -1046,20 +1046,20 @@ export default function GoalsPage({ daysSinceQuit }: GoalsPageProps) {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">My Goals</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">My Goals</h1>
       </div>
 
       {/* Next Goal Section */}
       {nextGoal && (
-        <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+        <Card className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-purple-200 dark:border-purple-700">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="w-5 h-5 text-purple-600" />
-              <h3 className="font-semibold text-purple-800">Next goal</h3>
+              <TrendingUp className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              <h3 className="font-semibold text-purple-800 dark:text-purple-200">Next goal</h3>
             </div>
-            <p className="text-gray-700 mb-3">{nextGoal.description}</p>
+            <p className="text-gray-700 dark:text-gray-200 mb-3">{nextGoal.description}</p>
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                 <span>Progress to {nextGoal.target}:</span>
                 <span className="font-semibold">
                   {nextGoal.current}/{nextGoal.target}
@@ -1078,18 +1078,33 @@ export default function GoalsPage({ daysSinceQuit }: GoalsPageProps) {
           const completedCount = categoryGoals.filter((goal) => goal.completed).length
           const progress = getCategoryProgress(category.id)
 
+          // Define specific dark mode overrides for problematic categories
+          let cardClasses = `cursor-pointer transition-all hover:shadow-md ${category.bgColor} ${category.borderColor}`
+
+          if (category.id === "lungs") {
+            cardClasses += " dark:!bg-gray-800 dark:!border-gray-600"
+          } else if (category.id === "nicotine") {
+            cardClasses += " dark:!bg-gray-800 dark:!border-gray-600"
+          } else if (category.id === "trophies") {
+            cardClasses += " dark:!bg-gray-800 dark:!border-gray-600"
+          } else {
+            cardClasses += " dark:bg-gray-800 dark:border-gray-600"
+          }
+
+          if (selectedCategory === category.id) {
+            cardClasses += " ring-2 ring-blue-500"
+          }
+
           return (
             <Card
               key={category.id}
-              className={`cursor-pointer transition-all hover:shadow-md ${category.bgColor} ${category.borderColor} ${
-                selectedCategory === category.id ? "ring-2 ring-blue-500" : ""
-              }`}
+              className={cardClasses}
               onClick={() => setSelectedCategory(selectedCategory === category.id ? null : category.id)}
             >
               <CardContent className="p-4 text-center">
-                <div className={`${category.color} mb-2 flex justify-center`}>{category.icon}</div>
-                <h3 className="font-semibold text-sm mb-1">{category.name}</h3>
-                <div className="text-xs text-gray-600">
+                <div className={`${category.color} dark:!text-gray-200 mb-2 flex justify-center`}>{category.icon}</div>
+                <h3 className="font-semibold text-sm mb-1 text-gray-900 dark:!text-gray-200">{category.name}</h3>
+                <div className="text-xs text-gray-600 dark:!text-gray-300">
                   {completedCount}/{categoryGoals.length}
                 </div>
                 {progress > 0 && (
@@ -1147,16 +1162,18 @@ export default function GoalsPage({ daysSinceQuit }: GoalsPageProps) {
       )}
 
       {/* Set Personal Goal */}
-      <Card className="border-blue-200">
+      <Card className="border-blue-200 dark:border-blue-800">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-full">
-                <Target className="w-5 h-5 text-blue-600" />
+              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-full">
+                <Target className="w-5 h-5 text-blue-600 dark:text-blue-300" />
               </div>
               <div>
-                <h3 className="font-semibold">Set a Personal Goal</h3>
-                <p className="text-sm text-gray-600">Create custom goals to stay motivated on your journey</p>
+                <h3 className="font-semibold dark:text-gray-100">Set a Personal Goal</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Create custom goals to stay motivated on your journey
+                </p>
               </div>
             </div>
             <Button onClick={() => setShowAddGoal(!showAddGoal)} size="sm" className="bg-blue-600 hover:bg-blue-700">
@@ -1165,17 +1182,19 @@ export default function GoalsPage({ daysSinceQuit }: GoalsPageProps) {
           </div>
 
           {showAddGoal && (
-            <div className="mt-4 space-y-3 border-t pt-4">
+            <div className="mt-4 space-y-3 border-t dark:border-gray-700 pt-4">
               <Input
                 placeholder="Goal title"
                 value={newGoal.title}
                 onChange={(e) => setNewGoal({ ...newGoal, title: e.target.value })}
+                className="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
               />
               <Textarea
                 placeholder="Goal description"
                 value={newGoal.description}
                 onChange={(e) => setNewGoal({ ...newGoal, description: e.target.value })}
                 rows={2}
+                className="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
               />
               <div className="grid grid-cols-2 gap-3">
                 <Input
@@ -1183,14 +1202,15 @@ export default function GoalsPage({ daysSinceQuit }: GoalsPageProps) {
                   placeholder="Target (days)"
                   value={newGoal.target}
                   onChange={(e) => setNewGoal({ ...newGoal, target: e.target.value })}
+                  className="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                 />
                 <select
                   value={newGoal.category}
                   onChange={(e) => setNewGoal({ ...newGoal, category: e.target.value })}
-                  className="px-3 py-2 border rounded-md"
+                  className="px-3 py-2 border rounded-md dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                 >
                   {goalCategories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
+                    <option key={cat.id} value={cat.id} className="dark:bg-gray-800 dark:text-gray-100">
                       {cat.name}
                     </option>
                   ))}
@@ -1200,7 +1220,12 @@ export default function GoalsPage({ daysSinceQuit }: GoalsPageProps) {
                 <Button onClick={addCustomGoal} size="sm" className="flex-1">
                   Add Goal
                 </Button>
-                <Button onClick={() => setShowAddGoal(false)} variant="outline" size="sm" className="flex-1">
+                <Button
+                  onClick={() => setShowAddGoal(false)}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                >
                   <X className="w-4 h-4" />
                 </Button>
               </div>
@@ -1212,21 +1237,26 @@ export default function GoalsPage({ daysSinceQuit }: GoalsPageProps) {
       {/* Your Achievements */}
       <Card>
         <CardHeader>
-          <CardTitle>Your Achievements</CardTitle>
+          <CardTitle className="dark:text-gray-100">Your Achievements</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {/* First Day Achievement */}
             {daysSinceQuit >= 1 && (
-              <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                <div className="p-2 bg-green-100 rounded-full">
-                  <Medal className="w-6 h-6 text-green-600" />
+              <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="p-2 bg-green-100 dark:bg-green-800 rounded-full">
+                  <Medal className="w-6 h-6 text-green-600 dark:text-green-300" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-green-700">First Day Complete</h4>
-                  <p className="text-sm text-green-600">You've completed your first day without smoking!</p>
+                  <h4 className="font-semibold text-green-700 dark:text-green-300">First Day Complete</h4>
+                  <p className="text-sm text-green-600 dark:text-green-400">
+                    You've completed your first day without smoking!
+                  </p>
                 </div>
-                <Badge variant="secondary" className="bg-green-100 text-green-700">
+                <Badge
+                  variant="secondary"
+                  className="bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-300"
+                >
                   Day 1
                 </Badge>
               </div>
@@ -1234,15 +1264,17 @@ export default function GoalsPage({ daysSinceQuit }: GoalsPageProps) {
 
             {/* Week Warrior Achievement */}
             {daysSinceQuit >= 7 && (
-              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="p-2 bg-blue-100 rounded-full">
-                  <Star className="w-6 h-6 text-blue-600" />
+              <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="p-2 bg-blue-100 dark:bg-blue-800 rounded-full">
+                  <Star className="w-6 h-6 text-blue-600 dark:text-blue-300" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-blue-700">Week Warrior</h4>
-                  <p className="text-sm text-blue-600">Amazing! You've completed one full week smoke-free!</p>
+                  <h4 className="font-semibold text-blue-700 dark:text-blue-300">Week Warrior</h4>
+                  <p className="text-sm text-blue-600 dark:text-blue-400">
+                    Amazing! You've completed one full week smoke-free!
+                  </p>
                 </div>
-                <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-blue-300">
                   Week 1
                 </Badge>
               </div>
@@ -1250,23 +1282,28 @@ export default function GoalsPage({ daysSinceQuit }: GoalsPageProps) {
 
             {/* Month Master Achievement */}
             {daysSinceQuit >= 30 && (
-              <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
-                <div className="p-2 bg-purple-100 rounded-full">
-                  <Trophy className="w-6 h-6 text-purple-600" />
+              <div className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                <div className="p-2 bg-purple-100 dark:bg-purple-800 rounded-full">
+                  <Trophy className="w-6 h-6 text-purple-600 dark:text-purple-300" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-purple-700">Month Master</h4>
-                  <p className="text-sm text-purple-600">Incredible! You've reached the one month milestone!</p>
+                  <h4 className="font-semibold text-purple-700 dark:text-purple-300">Month Master</h4>
+                  <p className="text-sm text-purple-600 dark:text-purple-400">
+                    Incredible! You've reached the one month milestone!
+                  </p>
                 </div>
-                <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+                <Badge
+                  variant="secondary"
+                  className="bg-purple-100 text-purple-700 dark:bg-purple-800 dark:text-purple-300"
+                >
                   Month 1
                 </Badge>
               </div>
             )}
 
             {daysSinceQuit === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <Trophy className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <Trophy className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
                 <p>Complete your first day to unlock achievements!</p>
               </div>
             )}
