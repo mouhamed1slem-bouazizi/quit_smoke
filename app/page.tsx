@@ -4,12 +4,17 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Heart, Gamepad2, Target, Activity } from "lucide-react"
+import { Heart, Gamepad2, Target, Activity, Stethoscope, Trophy, BookOpen, Flame } from "lucide-react"
 import MotivationSection from "@/components/motivation-section"
 import ProgressTracker from "@/components/progress-tracker"
 import GamesSection from "@/components/games-section"
 import HealthFacts from "@/components/health-facts"
+import HealthTimeline from "@/components/health-timeline"
+import HealthRecovery from "@/components/health-recovery"
 import GoalSetting from "@/components/goal-setting"
+import GoalsPage from "@/components/goals-page"
+import DiaryPage from "@/components/diary-page"
+import CravingPage from "@/components/craving-page"
 import ActivitiesSuggestions from "@/components/activities-suggestions"
 import AchievementsSection from "@/components/achievements-section"
 
@@ -40,6 +45,7 @@ export default function QuitSmokingApp() {
     smokesPerDay: 20,
     costPerPack: 10,
     cigarettesPerPack: 20,
+    quitDate: new Date().toISOString().split("T")[0], // Default to today
   })
 
   useEffect(() => {
@@ -53,8 +59,10 @@ export default function QuitSmokingApp() {
 
   const handleSetup = () => {
     const newUserData: UserData = {
-      quitDate: new Date().toISOString(),
-      ...setupData,
+      quitDate: new Date(setupData.quitDate + "T00:00:00").toISOString(), // Convert to full ISO string
+      smokesPerDay: setupData.smokesPerDay,
+      costPerPack: setupData.costPerPack,
+      cigarettesPerPack: setupData.cigarettesPerPack,
       goals: [
         { id: "1", title: "24 Hours Smoke-Free", target: 1, completed: false },
         { id: "2", title: "1 Week Smoke-Free", target: 7, completed: false },
@@ -134,6 +142,18 @@ export default function QuitSmokingApp() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium mb-2">When did you quit smoking?</label>
+                <input
+                  type="date"
+                  value={setupData.quitDate || new Date().toISOString().split("T")[0]}
+                  onChange={(e) => setSetupData({ ...setupData, quitDate: e.target.value })}
+                  className="w-full p-3 border rounded-lg"
+                  max={new Date().toISOString().split("T")[0]}
+                />
+                <p className="text-xs text-gray-500 mt-1">Select today if you're quitting right now</p>
+              </div>
+
               <Button onClick={handleSetup} className="w-full bg-green-600 hover:bg-green-700">
                 Start My Journey 🚀
               </Button>
@@ -160,18 +180,30 @@ export default function QuitSmokingApp() {
         {/* Main Content */}
         <div className="p-4">
           <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-4">
-              <TabsTrigger value="dashboard" className="text-xs">
-                <Heart className="w-4 h-4" />
+            <TabsList className="grid w-full grid-cols-8 mb-4 text-xs">
+              <TabsTrigger value="dashboard" className="p-2">
+                <Heart className="w-3 h-3" />
               </TabsTrigger>
-              <TabsTrigger value="games" className="text-xs">
-                <Gamepad2 className="w-4 h-4" />
+              <TabsTrigger value="craving" className="p-2">
+                <Flame className="w-3 h-3" />
               </TabsTrigger>
-              <TabsTrigger value="goals" className="text-xs">
-                <Target className="w-4 h-4" />
+              <TabsTrigger value="health" className="p-2">
+                <Stethoscope className="w-3 h-3" />
               </TabsTrigger>
-              <TabsTrigger value="activities" className="text-xs">
-                <Activity className="w-4 h-4" />
+              <TabsTrigger value="goals-new" className="p-2">
+                <Trophy className="w-3 h-3" />
+              </TabsTrigger>
+              <TabsTrigger value="diary" className="p-2">
+                <BookOpen className="w-3 h-3" />
+              </TabsTrigger>
+              <TabsTrigger value="games" className="p-2">
+                <Gamepad2 className="w-3 h-3" />
+              </TabsTrigger>
+              <TabsTrigger value="goals" className="p-2">
+                <Target className="w-3 h-3" />
+              </TabsTrigger>
+              <TabsTrigger value="activities" className="p-2">
+                <Activity className="w-3 h-3" />
               </TabsTrigger>
             </TabsList>
 
@@ -179,7 +211,24 @@ export default function QuitSmokingApp() {
               <ProgressTracker userData={userData!} daysSinceQuit={daysSinceQuit} />
               <MotivationSection daysSinceQuit={daysSinceQuit} />
               <HealthFacts daysSinceQuit={daysSinceQuit} />
+              <HealthTimeline daysSinceQuit={daysSinceQuit} />
               <AchievementsSection userData={userData!} updateUserData={updateUserData} daysSinceQuit={daysSinceQuit} />
+            </TabsContent>
+
+            <TabsContent value="craving">
+              <CravingPage daysSinceQuit={daysSinceQuit} updateUserData={updateUserData} />
+            </TabsContent>
+
+            <TabsContent value="health">
+              <HealthRecovery daysSinceQuit={daysSinceQuit} />
+            </TabsContent>
+
+            <TabsContent value="goals-new">
+              <GoalsPage daysSinceQuit={daysSinceQuit} userData={userData!} updateUserData={updateUserData} />
+            </TabsContent>
+
+            <TabsContent value="diary">
+              <DiaryPage daysSinceQuit={daysSinceQuit} updateUserData={updateUserData} />
             </TabsContent>
 
             <TabsContent value="games">
