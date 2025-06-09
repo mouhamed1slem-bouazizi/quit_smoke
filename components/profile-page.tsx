@@ -167,12 +167,20 @@ export default function ProfilePage({ daysSinceQuit }: ProfilePageProps) {
         to: DEVELOPER_EMAIL,
       }
 
-      // Here you would typically send to your backend API
-      // For now, we'll simulate the API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Send the feedback to our API endpoint
+      const response = await fetch("/api/feedback", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(feedbackData),
+      })
 
-      // Log the feedback data (in production, this would be sent to your server)
-      console.log(`Feedback submitted to ${DEVELOPER_EMAIL}:`, feedbackData)
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to send feedback")
+      }
 
       setFeedbackStatus({
         type: "success",
@@ -195,6 +203,8 @@ export default function ProfilePage({ daysSinceQuit }: ProfilePageProps) {
       setIsSendingFeedback(false)
     }
   }
+
+  // Rest of the component remains the same...
 
   return (
     <div className="space-y-4">

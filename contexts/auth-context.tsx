@@ -114,55 +114,96 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userSetupCompleted, setUserSetupCompleted] = useState(false)
   const [offlineMode, setOfflineMode] = useState(!isFirebaseAvailable)
 
-  async function signup(email: string, password: string, displayName?: string) {
-    if (!isFirebaseAvailable || offlineMode) {
-      // Create a mock user for offline mode
-      const mockUser = {
-        uid: `offline-${Date.now()}`,
-        email,
-        displayName: displayName || email.split("@")[0],
-        emailVerified: false,
-      } as User
+  // Create offline user helper
+  function createOfflineUser(email: string, displayName?: string): User {
+    return {
+      uid: `offline-${email.replace(/[^a-zA-Z0-9]/g, "")}`,
+      email,
+      displayName: displayName || email.split("@")[0],
+      emailVerified: false,
+    } as User
+  }
 
+  async function signup(email: string, password: string, displayName?: string) {
+    console.log("Signup attempt - Firebase available:", isFirebaseAvailable, "Offline mode:", offlineMode)
+
+    // Always use offline mode if Firebase is not available
+    if (!isFirebaseAvailable || offlineMode) {
+      console.log("Creating offline user account")
+      const mockUser = createOfflineUser(email, displayName)
       setCurrentUser(mockUser)
       return mockUser
     }
 
-    const result = await createUserWithEmailAndPassword(auth, email, password)
+    // Only try Firebase if it's definitely available
+    try {
+      const result = await createUserWithEmailAndPassword(auth, email, password)
 
-    if (displayName && result.user) {
-      await updateProfile(result.user, { displayName })
-      await result.user.reload()
+      if (displayName && result.user) {
+        await updateProfile(result.user, { displayName })
+        await result.user.reload()
+      }
+
+      return result.user
+    } catch (error) {
+      console.error("Firebase signup failed, switching to offline mode:", error)
+      setOfflineMode(true)
+
+      const mockUser = createOfflineUser(email, displayName)
+      setCurrentUser(mockUser)
+      return mockUser
     }
-
-    return result.user
   }
 
   async function login(email: string, password: string) {
-    if (!isFirebaseAvailable || offlineMode) {
-      // For offline mode, create a mock user and try to load data from localStorage
-      const mockUser = {
-        uid: `offline-${email.replace(/[^a-zA-Z0-9]/g, "")}`,
-        email,
-        displayName: email.split("@")[0],
-        emailVerified: false,
-      } as User
+    console.log("Login attempt - Firebase available:", isFirebaseAvailable, "Offline mode:", offlineMode)
 
+    // Always use offline mode if Firebase is not available
+    if (!isFirebaseAvailable || offlineMode) {
+      console.log("Logging in with offline mode")
+      const mockUser = createOfflineUser(email)
       setCurrentUser(mockUser)
 
       // Try to load existing user data from localStorage
       const localData = localStorage.getItem(`userData_${mockUser.uid}`)
       if (localData) {
-        const data = JSON.parse(localData) as UserData
-        setUserData(data)
-        setUserSetupCompleted(data.setupCompleted || false)
+        try {
+          const data = JSON.parse(localData) as UserData
+          setUserData(data)
+          setUserSetupCompleted(data.setupCompleted || false)
+        } catch (error) {
+          console.error("Error parsing local data:", error)
+        }
       }
 
       return mockUser
     }
 
-    const result = await signInWithEmailAndPassword(auth, email, password)
-    return result.user
+    // Only try Firebase if it's definitely available
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password)
+      return result.user
+    } catch (error) {
+      console.error("Firebase login failed, switching to offline mode:", error)
+      setOfflineMode(true)
+
+      const mockUser = createOfflineUser(email)
+      setCurrentUser(mockUser)
+
+      // Try to load existing user data from localStorage
+      const localData = localStorage.getItem(`userData_${mockUser.uid}`)
+      if (localData) {
+        try {
+          const data = JSON.parse(localData) as UserData
+          setUserData(data)
+          setUserSetupCompleted(data.setupCompleted || false)
+        } catch (error) {
+          console.error("Error parsing local data:", error)
+        }
+      }
+
+      return mockUser
+    }
   }
 
   async function logout() {
@@ -170,8 +211,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUserData(null)
     setUserSetupCompleted(false)
 
-    if (isFirebaseAvailable && !offlineMode) {
-      return await signOut(auth)
+    if (isFirebaseAvailable && !offlineMode && auth) {
+      try {
+        return await signOut(auth)
+      } catch (error) {
+        console.error("Logout error:", error)
+      }
     }
   }
 
@@ -179,7 +224,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!isFirebaseAvailable || offlineMode) {
       throw new Error("Password reset is not available in offline mode")
     }
-    return await sendPasswordResetEmail(auth, email)
+
+    try {
+      return await sendPasswordResetEmail(auth, email)
+    } catch (error) {
+      console.error("Password reset error:", error)
+      throw error
+    }
   }
 
   async function updateUserProfile(displayName: string) {
@@ -187,9 +238,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error("No user logged in")
     }
 
-    if (isFirebaseAvailable && !offlineMode) {
-      await updateProfile(currentUser, { displayName })
-      await currentUser.reload()
+    if (isFirebaseAvailable && !offlineMode && auth) {
+      try {
+        await updateProfile(currentUser, { displayName })
+        await currentUser.reload()
+      } catch (error) {
+        console.error("Profile update error:", error)
+      }
     }
   }
 
@@ -206,7 +261,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      if (isFirebaseAvailable && !offlineMode) {
+      if (isFirebaseAvailable && !offlineMode && db) {
         const userDocRef = doc(db, "users", currentUser.uid)
         await setDoc(userDocRef, dataWithTimestamps)
       }
@@ -232,7 +287,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } as UserData
 
     try {
-      if (isFirebaseAvailable && !offlineMode) {
+      if (isFirebaseAvailable && !offlineMode && db) {
         const userDocRef = doc(db, "users", currentUser.uid)
         await setDoc(userDocRef, updatedData, { merge: true })
       }
@@ -251,7 +306,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      if (isFirebaseAvailable && !offlineMode) {
+      if (isFirebaseAvailable && !offlineMode && db) {
         const userDocRef = doc(db, "users", currentUser.uid)
         const userDoc = await getDoc(userDocRef)
 
@@ -269,13 +324,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Check localStorage
       const localData = localStorage.getItem(`userData_${currentUser.uid}`)
       if (localData) {
-        const data = JSON.parse(localData) as UserData
-        const hasCompletedSetup =
-          data.setupCompleted === true ||
-          (data.quitDate && data.smokesPerDay && data.costPerPack && data.cigarettesPerPack)
+        try {
+          const data = JSON.parse(localData) as UserData
+          const hasCompletedSetup =
+            data.setupCompleted === true ||
+            (data.quitDate && data.smokesPerDay && data.costPerPack && data.cigarettesPerPack)
 
-        setUserSetupCompleted(hasCompletedSetup)
-        return hasCompletedSetup
+          setUserSetupCompleted(hasCompletedSetup)
+          return hasCompletedSetup
+        } catch (error) {
+          console.error("Error parsing local data:", error)
+        }
       }
 
       setUserSetupCompleted(false)
@@ -295,7 +354,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setDataLoading(true)
 
-      if (isFirebaseAvailable && !offlineMode) {
+      if (isFirebaseAvailable && !offlineMode && db) {
         const userDocRef = doc(db, "users", currentUser.uid)
         const userDoc = await getDoc(userDocRef)
 
@@ -314,13 +373,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Fallback to localStorage
       const localData = localStorage.getItem(`userData_${currentUser.uid}`)
       if (localData) {
-        const data = JSON.parse(localData) as UserData
-        setUserData(data)
+        try {
+          const data = JSON.parse(localData) as UserData
+          setUserData(data)
 
-        const hasCompletedSetup =
-          data.setupCompleted === true ||
-          (data.quitDate && data.smokesPerDay && data.costPerPack && data.cigarettesPerPack)
-        setUserSetupCompleted(hasCompletedSetup)
+          const hasCompletedSetup =
+            data.setupCompleted === true ||
+            (data.quitDate && data.smokesPerDay && data.costPerPack && data.cigarettesPerPack)
+          setUserSetupCompleted(hasCompletedSetup)
+        } catch (error) {
+          console.error("Error parsing local data:", error)
+        }
       } else {
         setUserData(null)
         setUserSetupCompleted(false)
@@ -330,8 +393,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Fallback to localStorage
       const localData = localStorage.getItem(`userData_${currentUser.uid}`)
       if (localData) {
-        const data = JSON.parse(localData) as UserData
-        setUserData(data)
+        try {
+          const data = JSON.parse(localData) as UserData
+          setUserData(data)
+        } catch (error) {
+          console.error("Error parsing local data:", error)
+        }
       } else {
         setUserData(null)
         setUserSetupCompleted(false)
@@ -342,72 +409,99 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
+    console.log("Auth context initializing - Firebase available:", isFirebaseAvailable)
+
     if (!isFirebaseAvailable) {
+      console.log("Firebase not available, setting offline mode")
       setOfflineMode(true)
       setLoading(false)
       return
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      try {
-        setCurrentUser(user)
-
-        if (user) {
-          setDataLoading(true)
-
+    // Only set up Firebase auth listener if Firebase is available
+    try {
+      if (auth) {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
           try {
-            const userDocRef = doc(db, "users", user.uid)
-            const userDoc = await getDoc(userDocRef)
+            setCurrentUser(user)
 
-            if (userDoc.exists()) {
-              const data = userDoc.data() as UserData
-              setUserData(data)
+            if (user) {
+              setDataLoading(true)
 
-              const hasCompletedSetup =
-                data.setupCompleted === true ||
-                (data.quitDate && data.smokesPerDay && data.costPerPack && data.cigarettesPerPack)
-              setUserSetupCompleted(hasCompletedSetup)
-            } else {
-              const localData = localStorage.getItem(`userData_${user.uid}`)
-              if (localData) {
-                const data = JSON.parse(localData) as UserData
-                setUserData(data)
+              try {
+                if (db) {
+                  const userDocRef = doc(db, "users", user.uid)
+                  const userDoc = await getDoc(userDocRef)
 
-                const hasCompletedSetup =
-                  data.setupCompleted === true ||
-                  (data.quitDate && data.smokesPerDay && data.costPerPack && data.cigarettesPerPack)
-                setUserSetupCompleted(hasCompletedSetup)
-              } else {
-                setUserData(null)
-                setUserSetupCompleted(false)
+                  if (userDoc.exists()) {
+                    const data = userDoc.data() as UserData
+                    setUserData(data)
+
+                    const hasCompletedSetup =
+                      data.setupCompleted === true ||
+                      (data.quitDate && data.smokesPerDay && data.costPerPack && data.cigarettesPerPack)
+                    setUserSetupCompleted(hasCompletedSetup)
+                  } else {
+                    const localData = localStorage.getItem(`userData_${user.uid}`)
+                    if (localData) {
+                      try {
+                        const data = JSON.parse(localData) as UserData
+                        setUserData(data)
+
+                        const hasCompletedSetup =
+                          data.setupCompleted === true ||
+                          (data.quitDate && data.smokesPerDay && data.costPerPack && data.cigarettesPerPack)
+                        setUserSetupCompleted(hasCompletedSetup)
+                      } catch (error) {
+                        console.error("Error parsing local data:", error)
+                      }
+                    } else {
+                      setUserData(null)
+                      setUserSetupCompleted(false)
+                    }
+                  }
+                }
+              } catch (firestoreError) {
+                console.error("Firestore error:", firestoreError)
+                const localData = localStorage.getItem(`userData_${user.uid}`)
+                if (localData) {
+                  try {
+                    const data = JSON.parse(localData) as UserData
+                    setUserData(data)
+                  } catch (error) {
+                    console.error("Error parsing local data:", error)
+                  }
+                } else {
+                  setUserData(null)
+                  setUserSetupCompleted(false)
+                }
               }
-            }
-          } catch (firestoreError) {
-            console.error("Firestore error:", firestoreError)
-            const localData = localStorage.getItem(`userData_${user.uid}`)
-            if (localData) {
-              const data = JSON.parse(localData) as UserData
-              setUserData(data)
             } else {
               setUserData(null)
               setUserSetupCompleted(false)
             }
+          } catch (error) {
+            console.error("Error in auth state change:", error)
+            setUserData(null)
+            setUserSetupCompleted(false)
+          } finally {
+            setLoading(false)
+            setDataLoading(false)
           }
-        } else {
-          setUserData(null)
-          setUserSetupCompleted(false)
-        }
-      } catch (error) {
-        console.error("Error in auth state change:", error)
-        setUserData(null)
-        setUserSetupCompleted(false)
-      } finally {
-        setLoading(false)
-        setDataLoading(false)
-      }
-    })
+        })
 
-    return unsubscribe
+        return unsubscribe
+      } else {
+        console.log("Auth object not available, switching to offline mode")
+        setOfflineMode(true)
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error("Error setting up auth state listener:", error)
+      setOfflineMode(true)
+      setLoading(false)
+      return () => {}
+    }
   }, [])
 
   const value = {
