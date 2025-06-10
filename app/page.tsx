@@ -116,11 +116,10 @@ export default function QuitSmokingApp() {
               </div>
               <Button
                 variant="ghost"
-                size="lg"
                 onClick={() => setActiveTab("profile")}
-                className="p-4 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+                className="p-6 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full min-w-[60px] min-h-[60px] flex items-center justify-center"
               >
-                <User className="w-9 h-9 text-gray-600 dark:text-gray-300" />
+                <User className="w-12 h-12 text-gray-600 dark:text-gray-300" />
               </Button>
             </div>
           </div>
