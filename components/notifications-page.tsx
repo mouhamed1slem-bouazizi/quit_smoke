@@ -1,32 +1,58 @@
 "use client"
+
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Bell, Trophy, Target, Heart, Clock, Settings, CheckCheck, Trash2, Filter } from "lucide-react"
+import {
+  ArrowLeft,
+  Bell,
+  Trophy,
+  Target,
+  Heart,
+  Clock,
+  Settings,
+  CheckCheck,
+  Trash2,
+  Filter,
+  AlertCircle,
+  MessageSquare,
+} from "lucide-react"
 import { useNotifications } from "@/contexts/notification-context"
 import type { Notification } from "@/types/notification"
+import { useRouter } from "next/navigation"
+import Image from "next/image"
 
-const getNotificationIcon = (type: Notification["type"]) => {
+const getNotificationIcon = (type: Notification["type"], source: Notification["source"]) => {
+  if (source === "firebase") {
+    return <MessageSquare className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+  }
+
   switch (type) {
     case "achievement":
-      return <Trophy className="w-5 h-5 text-yellow-600" />
+      return <Trophy className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
     case "milestone":
-      return <Target className="w-5 h-5 text-green-600" />
+      return <Target className="w-5 h-5 text-green-600 dark:text-green-400" />
     case "health":
-      return <Heart className="w-5 h-5 text-red-500" />
+      return <Heart className="w-5 h-5 text-red-500 dark:text-red-400" />
     case "goal":
-      return <Target className="w-5 h-5 text-blue-600" />
+      return <Target className="w-5 h-5 text-blue-600 dark:text-blue-400" />
     case "reminder":
-      return <Clock className="w-5 h-5 text-orange-600" />
+      return <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
     case "system":
-      return <Settings className="w-5 h-5 text-gray-600" />
+      return <Settings className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+    case "push":
+      return <AlertCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
     default:
-      return <Bell className="w-5 h-5 text-blue-600" />
+      return <Bell className="w-5 h-5 text-blue-600 dark:text-blue-400" />
   }
 }
 
-const getNotificationTypeColor = (type: Notification["type"]) => {
+const getNotificationTypeColor = (type: Notification["type"], source: Notification["source"]) => {
+  if (source === "firebase") {
+    return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
+  }
+
   switch (type) {
     case "achievement":
       return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
@@ -40,26 +66,45 @@ const getNotificationTypeColor = (type: Notification["type"]) => {
       return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300"
     case "system":
       return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300"
+    case "push":
+      return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
     default:
       return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
   }
 }
 
 export default function NotificationsPage() {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, clearAllNotifications } =
-    useNotifications()
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    clearAllNotifications,
+    requestNotificationPermission,
+    notificationPermission,
+  } = useNotifications()
+
   const [filter, setFilter] = useState<"all" | "unread">("all")
-  const [typeFilter, setTypeFilter] = useState<Notification["type"] | "all">("all")
+  const [typeFilter, setTypeFilter] = useState<Notification["type"] | "all" | "push">("all")
+  const [sourceFilter, setSourceFilter] = useState<"all" | "app" | "firebase">("all")
+  const router = useRouter()
 
   const filteredNotifications = notifications.filter((notification) => {
     const matchesReadFilter = filter === "all" || (filter === "unread" && !notification.isRead)
     const matchesTypeFilter = typeFilter === "all" || notification.type === typeFilter
-    return matchesReadFilter && matchesTypeFilter
+    const matchesSourceFilter = sourceFilter === "all" || notification.source === sourceFilter
+    return matchesReadFilter && matchesTypeFilter && matchesSourceFilter
   })
 
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.isRead) {
       markAsRead(notification.id)
+    }
+
+    // If notification has an action URL, navigate to it
+    if (notification.data?.actionUrl) {
+      window.location.href = notification.data.actionUrl
     }
   }
 
@@ -84,6 +129,13 @@ export default function NotificationsPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => router.back()}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors mr-2"
+                aria-label="Go back"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              </button>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Bell className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 Notifications
@@ -95,6 +147,17 @@ export default function NotificationsPage() {
               )}
             </div>
             <div className="flex gap-2">
+              {notificationPermission !== "granted" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => requestNotificationPermission()}
+                  className="flex items-center gap-2"
+                >
+                  <Bell className="w-4 h-4" />
+                  Enable Notifications
+                </Button>
+              )}
               {unreadCount > 0 && (
                 <Button variant="outline" size="sm" onClick={markAllAsRead} className="flex items-center gap-2">
                   <CheckCheck className="w-4 h-4" />
@@ -129,6 +192,7 @@ export default function NotificationsPage() {
               Unread ({unreadCount})
             </Button>
             <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2" />
+
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as Notification["type"] | "all")}
@@ -140,7 +204,20 @@ export default function NotificationsPage() {
               <option value="health">Health</option>
               <option value="goal">Goals</option>
               <option value="reminder">Reminders</option>
+              <option value="push">Push</option>
               <option value="system">System</option>
+            </select>
+
+            <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2" />
+
+            <select
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value as "all" | "app" | "firebase")}
+              className="px-3 py-1 text-sm border rounded-md bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+            >
+              <option value="all">All Sources</option>
+              <option value="app">In-App</option>
+              <option value="firebase">Push</option>
             </select>
           </div>
 
@@ -170,7 +247,9 @@ export default function NotificationsPage() {
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 mt-1">{getNotificationIcon(notification.type)}</div>
+                    <div className="flex-shrink-0 mt-1">
+                      {getNotificationIcon(notification.type, notification.source)}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
@@ -186,9 +265,9 @@ export default function NotificationsPage() {
                             </h4>
                             <Badge
                               variant="secondary"
-                              className={`text-xs ${getNotificationTypeColor(notification.type)}`}
+                              className={`text-xs ${getNotificationTypeColor(notification.type, notification.source)}`}
                             >
-                              {notification.type}
+                              {notification.source === "firebase" ? "Push" : notification.type}
                             </Badge>
                             {!notification.isRead && <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0" />}
                           </div>
@@ -201,6 +280,20 @@ export default function NotificationsPage() {
                           >
                             {notification.message}
                           </p>
+
+                          {/* Show image if available */}
+                          {notification.data?.imageUrl && (
+                            <div className="mt-2 rounded-md overflow-hidden">
+                              <Image
+                                src={notification.data.imageUrl || "/placeholder.svg"}
+                                alt="Notification image"
+                                width={300}
+                                height={150}
+                                className="object-cover rounded-md"
+                              />
+                            </div>
+                          )}
+
                           <div className="flex items-center gap-4 mt-2">
                             <span className="text-xs text-gray-500 dark:text-gray-400">
                               {formatRelativeTime(notification.timestamp)}

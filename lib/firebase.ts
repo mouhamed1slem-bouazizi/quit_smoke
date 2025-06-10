@@ -63,4 +63,4 @@ if (typeof window !== "undefined") {
   isFirebaseAvailable = false
 }
 
-export { app, auth, db, isFirebaseAvailable }
+export { app, auth, db, isFirebaseAvailable, firebaseConfig }
