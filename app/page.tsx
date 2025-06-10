@@ -1,9 +1,11 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Heart, Gamepad2, Target, Activity, Stethoscope, Trophy, BookOpen, Flame, User } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import NotificationBell from "@/components/notification-bell"
 import MotivationSection from "@/components/motivation-section"
 import ProgressTracker from "@/components/progress-tracker"
 import GamesSection from "@/components/games-section"
@@ -22,6 +24,7 @@ import { useAuth } from "@/contexts/auth-context"
 export default function QuitSmokingApp() {
   const { currentUser, userData, loading, dataLoading, userSetupCompleted, checkUserSetup } = useAuth()
   const router = useRouter()
+  const [activeTab, setActiveTab] = useState("dashboard")
 
   useEffect(() => {
     async function checkAuth() {
@@ -102,42 +105,54 @@ export default function QuitSmokingApp() {
       <div className="max-w-md mx-auto">
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 shadow-sm p-4 sticky top-0 z-10">
-          <div className="text-center">
-            <h1 className="text-xl font-bold text-green-600 dark:text-green-400">Smoke-Free Journey</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-300">Day {daysSinceQuit} • Keep going strong! 💪</p>
+          <div className="flex items-center justify-between">
+            <div className="flex-1 text-center">
+              <h1 className="text-xl font-bold text-green-600 dark:text-green-400">SmokeOut</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Day {daysSinceQuit} • Keep going strong! 💪</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="scale-125">
+                <NotificationBell />
+              </div>
+              <Button
+                variant="ghost"
+                size="lg"
+                onClick={() => setActiveTab("profile")}
+                className="p-4 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+              >
+                <User className="w-9 h-9 text-gray-600 dark:text-gray-300" />
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* Main Content */}
         <div className="p-4">
-          <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="grid w-full grid-cols-9 mb-4 text-xs">
-              <TabsTrigger value="dashboard" className="p-2">
-                <Heart className="w-3 h-3" />
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-8 mb-4 text-xs h-14">
+              <TabsTrigger value="dashboard" className="p-3 h-full">
+                <Heart className="w-5 h-5" />
               </TabsTrigger>
-              <TabsTrigger value="craving" className="p-2">
-                <Flame className="w-3 h-3" />
+              <TabsTrigger value="craving" className="p-3 h-full">
+                <Flame className="w-5 h-5" />
               </TabsTrigger>
-              <TabsTrigger value="health" className="p-2">
-                <Stethoscope className="w-3 h-3" />
+              <TabsTrigger value="health" className="p-3 h-full">
+                <Stethoscope className="w-5 h-5" />
               </TabsTrigger>
-              <TabsTrigger value="goals-new" className="p-2">
-                <Trophy className="w-3 h-3" />
+              <TabsTrigger value="goals-new" className="p-3 h-full">
+                <Trophy className="w-5 h-5" />
               </TabsTrigger>
-              <TabsTrigger value="diary" className="p-2">
-                <BookOpen className="w-3 h-3" />
+              <TabsTrigger value="diary" className="p-3 h-full">
+                <BookOpen className="w-5 h-5" />
               </TabsTrigger>
-              <TabsTrigger value="games" className="p-2">
-                <Gamepad2 className="w-3 h-3" />
+              <TabsTrigger value="games" className="p-3 h-full">
+                <Gamepad2 className="w-5 h-5" />
               </TabsTrigger>
-              <TabsTrigger value="goals" className="p-2">
-                <Target className="w-3 h-3" />
+              <TabsTrigger value="goals" className="p-3 h-full">
+                <Target className="w-5 h-5" />
               </TabsTrigger>
-              <TabsTrigger value="activities" className="p-2">
-                <Activity className="w-3 h-3" />
-              </TabsTrigger>
-              <TabsTrigger value="profile" className="p-2">
-                <User className="w-3 h-3" />
+              <TabsTrigger value="activities" className="p-3 h-full">
+                <Activity className="w-5 h-5" />
               </TabsTrigger>
             </TabsList>
 
